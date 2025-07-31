@@ -41,6 +41,86 @@ The application version is stored in the `VERSION` file at the project root and 
 2. Rebuild the binary - Go will automatically detect the change and rebuild
 3. The new version will be available via `--version` command
 
+**Note**: Changes to embedded files (like `VERSION`) trigger a rebuild, so you don't need to use `go clean` when updating the version.
+
+## Creating Custom Templates
+
+The `create-local-app` tool supports creating custom templates from existing projects using the `--reverse` mode. This allows you to capture your project structure and configurations as reusable templates.
+
+### Creating a Template from Your Project
+
+1. **Navigate to your completed project directory**:
+   ```sh
+   cd my-awesome-project
+   ```
+
+2. **Create a template using reverse mode**:
+   ```sh
+   create-local-app --reverse my-custom-template
+   ```
+
+3. **Template storage location**:
+   Your custom template will be stored in:
+   ```
+   ~/.create-local-app/templates/contributed/my-custom-template/
+   ```
+
+### How Templates Are Processed
+
+When creating a template with `--reverse`, the tool:
+
+- **Excludes build artifacts**: Automatically skips `.git/`, `node_modules/`, `dist/`, and other generated files
+- **Reverse template variables**: Converts your actual values back to template variables (e.g., "my-awesome-project" becomes `{{PROJECT_NAME}}`)
+- **Preserves structure**: Maintains your directory structure and file permissions
+- **Stores contributed templates**: Places custom templates in the `contributed/` folder to distinguish them from system templates
+
+### Using Custom Templates (Future Feature)
+
+> **📝 Note**: This feature is planned but not yet implemented.
+
+In future versions, you'll be able to use your custom templates with:
+
+```sh
+# Use a custom template instead of the default
+create-local-app --template my-custom-template
+
+# Combine with other options
+create-local-app --template my-custom-template --auto --force
+```
+
+### Template Directory Structure
+
+```
+~/.create-local-app/templates/
+├── system/                     # Built-in templates (managed by the tool)
+│   └── default/               # Default Wails project template
+└── contributed/               # Your custom templates
+    ├── my-custom-template/    # Created with --reverse
+    ├── react-template/        # Another custom template
+    └── minimal-template/      # Minimal project template
+```
+
+### Best Practices for Template Creation
+
+1. **Clean your project first**: Remove temporary files, logs, and personal configurations
+2. **Test your project**: Ensure everything works before creating the template
+3. **Use meaningful names**: Choose descriptive template names (e.g., `dashboard-app`, `cli-tool`)
+4. **Document your templates**: Consider adding a README in your template directory
+5. **Version control**: Your templates are stored locally - consider backing them up
+
+### Template Variable Replacement
+
+When creating templates, these values are automatically converted to template variables:
+
+| Your Value | Becomes Template Variable |
+|------------|---------------------------|
+| `my-awesome-project` | `{{PROJECT_NAME}}` |
+| `My-awesome-project` | `{{PROJECT_PROPER}}` |
+| `TrueBlocks, LLC` | `{{ORGANIZATION}}` |
+| `github.com/TrueBlocks/my-awesome-project` | `{{GITHUB}}` |
+| `trueblocks.io` | `{{DOMAIN}}` |
+
+This ensures that when someone uses your template, these values will be replaced with their own project-specific information.
 
 ## Template Variables
 

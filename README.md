@@ -23,7 +23,7 @@
     - [Interactive Mode (First Run)](#interactive-mode-first-run)
     - [Auto Mode (Subsequent Runs)](#auto-mode-subsequent-runs)
     - [Force Mode](#force-mode)
-    - [Example Workflow](#example-workflow)
+    - [Creating Your First TrueBlocks miniDapp](#creating-your-first-trueblocks-minidapp)
   - [Contributing](#contributing)
   - [License](#license)
   - [Contact](#contact)
@@ -55,17 +55,15 @@ Before using `create-local-app`, ensure you have the required versions of these 
 - **Go**: v1.23.1 or higher
 - **TrueBlocks**: v5.1.0 or higher  
 - **Wails**: v2.10.1 or higher
-
-**For contributors only:**
-- **Yarn**: v1.22.22 or higher (for development tooling)
+- **Yarn**: v1.22.22 or higher
 
 **Check your versions:**
 
 ```sh
-go version
-chifra version
-wails version
-# For contributors: yarn --version
+go version        # v1.23.1 or higher
+chifra version    # v5.1.0 or higher 
+wails version     # v2.10.1 or higher
+yarn --version    # v1.22.22 or higher
 ```
 
 ### Installation
@@ -95,8 +93,6 @@ wails version
 
    > **📝 Note:** If you get a permission error with `yarn deploy`, you may need to use `sudo yarn deploy`. This can happen if there's an existing file in `/usr/local/bin/` that was previously installed with sudo.
 
-   > **✅ Self-Contained:** The binary now contains embedded templates and is completely self-contained. Configuration and templates are automatically managed in `~/.create-local-app/` on first run.
-
 3. **Configuration Directory Structure**
 
    On first run, the application automatically creates and populates:
@@ -115,20 +111,6 @@ wails version
    - **Automatic Extraction**: Templates are extracted to home directory on first run
    - **Contributed Templates**: Your custom templates, preserved across updates
    - **Configuration**: Stores your organization, project defaults, etc.
-
-4. **For contributors only** (optional development tooling)
-
-   ```sh
-   # Install linting tools (requires Node.js/Yarn)
-   yarn install
-   
-   # Available development commands:
-   yarn build       # Build the Go binary
-   yarn deploy      # Install binary to /usr/local/bin and verify
-   yarn lint        # Run Go and Markdown linters
-   yarn clean       # Clean build artifacts
-   yarn test        # Run Go tests
-   ```
 
 ## Usage
 
@@ -164,7 +146,7 @@ You'll be prompted for:
 Skip prompts and use previously saved configuration:
 
 ```sh
-create-local-app --auto
+create-local-app --auto [--force]
 ```
 
 *Note: This uses the configuration saved from your previous interactive run and also requires `--force` if files exist.*
@@ -181,7 +163,7 @@ create-local-app --auto --force
 
 > **⚠️ Warning:** The `--force` flag will overwrite existing files in an unrecoverable way. Make sure to commit your changes to version control before using this flag.
 
-### Example Workflow
+### Creating Your First TrueBlocks miniDapp
 
 ```sh
 # 1. Create a new project interactively
