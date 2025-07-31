@@ -19,17 +19,10 @@
     - [Prerequisites](#prerequisites)
     - [Installation](#installation)
   - [Usage](#usage)
-    - [Interactive Mode (Default)](#interactive-mode-default)
-    - [Auto Mode](#auto-mode)
+    - [Interactive Mode (First Run)](#interactive-mode-first-run)
+    - [Auto Mode (Subsequent Runs)](#auto-mode-subsequent-runs)
     - [Example Workflow](#example-workflow)
-  - [Operation Modes](#operation-modes)
-    - [📝 Interactive Mode](#-interactive-mode)
-    - [⚡ Auto Mode](#-auto-mode)
-  - [Template Variables](#template-variables)
-  - [Roadmap](#roadmap)
   - [Contributing](#contributing)
-    - [Development Setup](#development-setup)
-    - [Development Setup](#development-setup-1)
   - [License](#license)
   - [Contact](#contact)
   - [Acknowledgments](#acknowledgments)
@@ -95,6 +88,8 @@ wails version
    export PATH="$PATH:$(pwd)/bin"
    ```
 
+   > **⚠️ Important:** If you rebuild the binary after installing it to your PATH, you must also re-install it. The old version will continue to run until you copy the new binary over the old one.
+
 3. **For contributors only** (optional development tooling)
 
    ```sh
@@ -103,18 +98,17 @@ wails version
    
    # Available development commands:
    yarn build       # Build the Go binary
-   yarn lint        # Run Go linter (golangci-lint)
-   yarn lint:md     # Run Markdown linter
+   yarn lint        # Run Go and Markdown linters
    yarn clean       # Clean build artifacts
    ```
 
 ## Usage
 
-`create-local-app` supports three main operation modes, each designed for different use cases:
+When you first run `create-local-app`, it will interactively prompt you for project information and save your preferences for future use. Subsequent runs can use the `--auto` flag to skip prompts if nothing has changed.
 
-### Interactive Mode (Default)
+### Interactive Mode (First Run)
 
-The default mode provides a guided setup experience:
+The first time you run the command, it provides a guided setup experience:
 
 ```sh
 create-local-app
@@ -124,10 +118,12 @@ You'll be prompted for:
 
 - **Organization**: Your organization name (e.g., "TrueBlocks, LLC")
 - **Project Name**: Name of your project (e.g., "my-awesome-app")
-- **GitHub**: Your GitHub username or organization
-- **Domain**: Your domain name (e.g., "trueblocks.io")
+- **Go Import**: For importing Go packages - no spaces allowed (e.g., "github.com/TrueBlocks/my-awesome-app")
+- **Domain**: The domain name of your home page (e.g., "trueblocks.io")
 
-### Auto Mode
+> **⚠️ Warning:** Running this command will overwrite existing files in the current directory. If you've made modifications to generated files, they will be lost. Make sure to commit your changes to version control before re-running.
+
+### Auto Mode (Subsequent Runs)
 
 Skip prompts and use previously saved configuration:
 
@@ -135,7 +131,7 @@ Skip prompts and use previously saved configuration:
 create-local-app --auto
 ```
 
-*Note: Requires running interactive mode first to create the configuration file.*
+*Note: This uses the configuration saved from your previous interactive run and also overwrites existing files.*
 
 ### Example Workflow
 
@@ -143,62 +139,17 @@ create-local-app --auto
 # 1. Create a new project interactively
 mkdir my-new-app && cd my-new-app
 create-local-app
+    # > TrueBlocks, LLC
+    # > my-new-app
+    # > github.com/TrueBlocks/my-new-app
+    # > https://trueblocks.io 
 
-# 2. Set up the project
-cd frontend && yarn install && cd ..
+# 2. Set up the my-new-app project
+yarn install
 
-# 3. Start development
-wails dev
+# 3. Start the new app
+yarn start
 ```
-
-## Operation Modes
-
-### 📝 Interactive Mode
-
-- **Purpose**: First-time setup or when you want to change configuration
-- **Behavior**: Prompts for all required information
-- **Config**: Saves settings to `.wails-template.json` for future use
-- **Safety**: Warns before overwriting existing files
-
-### ⚡ Auto Mode
-
-- **Purpose**: Quick project creation with saved settings
-- **Behavior**: Uses previously saved configuration without prompts
-- **Requirements**: Must have run interactive mode first
-- **Use Case**: Rapid prototyping or multiple similar projects
-
-## Template Variables
-
-The following variables are automatically replaced during project generation:
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `{{PROJECT_NAME}}` | Project name (lowercase) | `my-awesome-app` |
-| `{{PROJECT_PROPER}}` | Project name (title case) | `My-awesome-app` |
-| `{{ORGANIZATION}}` | Full organization name | `TrueBlocks, LLC` |
-| `{{ORG_NAME}}` | Organization name (first part) | `TrueBlocks` |
-| `{{ORG_LOWER}}` | Organization name (lowercase) | `trueblocks` |
-| `{{SLUG}}` | URL-friendly project identifier | `trueblocks-my-awesome-app` |
-| `{{GITHUB}}` | GitHub username/organization | `TrueBlocks` |
-| `{{DOMAIN}}` | Domain name | `trueblocks.io` |
-| `{{CHIFRA}}` | TrueBlocks Chifra path | `github.com/TrueBlocks/trueblocks-core/src/apps/chifra` |
-| `{{PUBLISHER_NAME}}` | Publisher name | `YourCompany` |
-| `{{PUBLISHER_EMAIL}}` | Publisher email | `your_email@your_company.com` |
-
-## Roadmap
-
-- [x] Interactive project creation
-- [x] Auto mode for rapid development
-- [x] Configurable template variables
-- [x] File exclusion system
-- [ ] Custom template support
-- [ ] Multiple template profiles
-- [ ] GUI version
-- [ ] Docker integration
-- [ ] CI/CD templates
-- [ ] Plugin system
-
-See the [open issues](https://github.com/TrueBlocks/create-local-app/issues) for a full list of proposed features and known issues.
 
 ## Contributing
 
@@ -213,40 +164,7 @@ Don't forget to give the project a star! Thanks again!
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-### Development Setup
-
-For contributors, additional development tools are available:
-
-```sh
-# Install development dependencies
-yarn install
-
-# Available yarn scripts:
-yarn build       # Build the Go binary
-yarn lint        # Run Go linter (golangci-lint)
-yarn lint:md     # Run Markdown linter
-yarn clean       # Clean build artifacts
-yarn test        # Run Go tests
-```
-
-**Quality Assurance:**
-- Go code is linted with `golangci-lint`
-- Markdown files are linted with `markdownlint`
-- All contributions should pass linting checks
-
-### Development Setup
-
-```sh
-# Clone the repository
-git clone https://github.com/TrueBlocks/create-local-app.git
-cd create-local-app
-
-# Run the application
-go run main.go
-
-# Build for production
-go build -o bin/create-local-app main.go
-```
+For detailed development information, see [DEVELOPING.md](DEVELOPING.md).
 
 ## License
 
@@ -271,12 +189,6 @@ Resources and inspirations that made this project possible:
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/TrueBlocks/create-local-app.svg?style=for-the-badge
-[contributors-url]: https://github.com/TrueBlocks/create-local-app/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/TrueBlocks/create-local-app.svg?style=for-the-badge
-[forks-url]: https://github.com/TrueBlocks/create-local-app/network/members
-[stars-shield]: https://img.shields.io/github/stars/TrueBlocks/create-local-app.svg?style=for-the-badge
-[stars-url]: https://github.com/TrueBlocks/create-local-app/stargazers
 [issues-shield]: https://img.shields.io/github/issues/TrueBlocks/create-local-app.svg?style=for-the-badge
 [issues-url]: https://github.com/TrueBlocks/create-local-app/issues
 [license-shield]: https://img.shields.io/github/license/TrueBlocks/create-local-app.svg?style=for-the-badge

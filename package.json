@@ -5,8 +5,7 @@
   "main": "main.go",
   "scripts": {
     "build": "go build -o bin/create-local-app main.go",
-    "lint": "golangci-lint run",
-    "lint:md": "markdownlint README.md .github/ISSUE_TEMPLATE/*.md",
+    "lint": "golangci-lint run && markdownlint README.md .github/ISSUE_TEMPLATE/*.md",
     "clean": "rm -rf bin/",
     "test": "go test ./..."
   },

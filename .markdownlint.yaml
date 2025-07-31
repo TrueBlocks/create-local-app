@@ -1,48 +1,12 @@
-# Markdownlint configuration file
-# This file suppresses specific linting rules for GitHub issue templates
-# and other markdown files in the project
-
-# MD007/ul-indent - Unordered list indentation
-# Disabled because GitHub issue templates often use indented lists for readability
 MD007: false
-
-# MD013/line-length - Line length
-# Disabled because README files often have long URLs and command examples
 MD013: false
-
-# MD024/no-duplicate-heading - No duplicate headings
-# Disabled because template files may have similar section headings
 MD024: false
-
-# MD031/blanks-around-fences - Fenced code blocks should be surrounded by blank lines
-# Disabled because issue templates may have tight formatting requirements
 MD031: false
-
-# MD032/blanks-around-lists - Lists should be surrounded by blank lines
-# Disabled because GitHub issue templates often have lists without surrounding blank lines
-# for compact formatting
 MD032: false
-
-# MD033/no-inline-html - No inline HTML
-# Disabled because README files often contain HTML for badges and formatting
 MD033: false
-
-# MD034/no-bare-urls - No bare URLs
-# Disabled because reference-style links at the end of README files are common
 MD034: false
-
-# MD036/no-emphasis-as-heading - No emphasis as heading
-# Disabled because README files often use emphasis for descriptive taglines
 MD036: false
-
-# MD040/fenced-code-language - Fenced code blocks should have a language specified
-# Disabled because issue templates may have placeholder code blocks without specific languages
 MD040: false
-
-# MD041/first-line-heading - First line should be a heading
-# Disabled because files with YAML frontmatter start with --- not headings
 MD041: false
-
-# MD051/link-fragments - Link fragments should be valid
-# Disabled because anchor links in README table of contents may not validate properly
 MD051: false
+MD053: false
