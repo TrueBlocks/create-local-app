@@ -81,11 +81,220 @@ func extractTemplates() (string, error) {
 	return tempDir, nil
 }
 
+func createTemplate(templateName string) error {
+	// Special case for "replace" - creates main template
+	if templateName == "replace" {
+		return createMainTemplate()
+	}
+
+	// Get current directory
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("failed to get current directory: %v", err)
+	}
+
+	// Create templates directory if it doesn't exist
+	templatesDir := filepath.Join(currentDir, "templates")
+	if err := os.MkdirAll(templatesDir, 0755); err != nil {
+		return fmt.Errorf("failed to create templates directory: %v", err)
+	}
+
+	// Create template subdirectory
+	templateDir := filepath.Join(templatesDir, templateName)
+	if err := os.MkdirAll(templateDir, 0755); err != nil {
+		return fmt.Errorf("failed to create template directory: %v", err)
+	}
+
+	// Copy current directory contents to template directory
+	err = copyDirectory(currentDir, templateDir)
+	if err != nil {
+		return fmt.Errorf("failed to copy directory contents: %v", err)
+	}
+
+	// Create tar.gz file
+	tarPath := filepath.Join(templatesDir, templateName+".tar.gz")
+	if _, err := os.Stat(tarPath); err == nil {
+		fmt.Printf("Warning: Template %s.tar.gz already exists and will be overwritten.\n", templateName)
+	}
+
+	err = createTarGz(templateDir, tarPath)
+	if err != nil {
+		// Clean up template directory on failure
+		os.RemoveAll(templateDir)
+		return fmt.Errorf("failed to create tar.gz: %v", err)
+	}
+
+	// Clean up template directory
+	err = os.RemoveAll(templateDir)
+	if err != nil {
+		fmt.Printf("Warning: Failed to clean up temporary directory %s: %v\n", templateDir, err)
+	}
+
+	fmt.Printf("Successfully created template: %s\n", tarPath)
+	return nil
+}
+
+func createMainTemplate() error {
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("failed to get current directory: %v", err)
+	}
+
+	// Create templates.tar.gz directly in current directory
+	tarPath := filepath.Join(currentDir, "templates.tar.gz")
+	if _, err := os.Stat(tarPath); err == nil {
+		fmt.Println("Warning: templates.tar.gz already exists and will be overwritten.")
+	}
+
+	err = createTarGz(currentDir, tarPath)
+	if err != nil {
+		return fmt.Errorf("failed to create templates.tar.gz: %v", err)
+	}
+
+	fmt.Printf("Successfully created main template: %s\n", tarPath)
+	return nil
+}
+
+func copyDirectory(src, dst string) error {
+	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip the destination directory itself to avoid infinite recursion
+		if strings.HasPrefix(path, dst) {
+			return filepath.SkipDir
+		}
+
+		// Skip excluded files and directories
+		excluded, skipErr := isExcluded(path, info)
+		if excluded {
+			if skipErr == filepath.SkipDir && info.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		// Calculate relative path
+		relPath, err := filepath.Rel(src, path)
+		if err != nil {
+			return err
+		}
+
+		// Create destination path
+		dstPath := filepath.Join(dst, relPath)
+
+		if info.IsDir() {
+			return os.MkdirAll(dstPath, info.Mode())
+		}
+
+		// Copy file
+		return copyFile(path, dstPath)
+	})
+}
+
+func copyFile(src, dst string) error {
+	sourceFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer sourceFile.Close()
+
+	// Create destination directory if it doesn't exist
+	dstDir := filepath.Dir(dst)
+	if err := os.MkdirAll(dstDir, 0755); err != nil {
+		return err
+	}
+
+	destFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
+	_, err = io.Copy(destFile, sourceFile)
+	return err
+}
+
+func createTarGz(sourceDir, targetPath string) error {
+	// Create the target file
+	file, err := os.Create(targetPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Create gzip writer
+	gzipWriter := gzip.NewWriter(file)
+	defer gzipWriter.Close()
+
+	// Create tar writer
+	tarWriter := tar.NewWriter(gzipWriter)
+	defer tarWriter.Close()
+
+	// Walk through the source directory
+	return filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip excluded files and directories
+		excluded, skipErr := isExcluded(path, info)
+		if excluded {
+			if skipErr == filepath.SkipDir && info.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		// Create tar header
+		header, err := tar.FileInfoHeader(info, "")
+		if err != nil {
+			return err
+		}
+
+		// Update the name to be relative to source directory
+		relPath, err := filepath.Rel(sourceDir, path)
+		if err != nil {
+			return err
+		}
+		header.Name = relPath
+
+		// Write header
+		if err := tarWriter.WriteHeader(header); err != nil {
+			return err
+		}
+
+		// If it's a regular file, write its content
+		if info.Mode().IsRegular() {
+			file, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+			defer file.Close()
+
+			_, err = io.Copy(tarWriter, file)
+			return err
+		}
+
+		return nil
+	})
+}
+
 func main() {
-	autoMode, reverseMode, err := parseArgs()
+	autoMode, reverseMode, templateName, err := parseArgs()
 	if err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)
+	}
+
+	if reverseMode {
+		err := createTemplate(templateName)
+		if err != nil {
+			fmt.Printf("Error creating template: %v\n", err)
+			os.Exit(1)
+		}
+		return
 	}
 
 	projectDir, err := os.Getwd()
@@ -429,18 +638,21 @@ func main() {
 	}
 }
 
-func parseArgs() (isAuto bool, isReverse bool, err error) {
+func parseArgs() (isAuto bool, isReverse bool, templateName string, err error) {
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
 		case "--reverse":
-			return false, true, nil
+			if len(os.Args) < 3 {
+				return false, false, "", fmt.Errorf("--reverse requires a template name parameter")
+			}
+			return false, true, os.Args[2], nil
 		case "--auto":
-			return true, false, nil
+			return true, false, "", nil
 		default:
-			return false, false, fmt.Errorf("unknown argument: %s (valid options: --reverse, --auto)", os.Args[1])
+			return false, false, "", fmt.Errorf("unknown argument: %s (valid options: --reverse <template-name>, --auto)", os.Args[1])
 		}
 	}
-	return false, false, nil
+	return false, false, "", nil
 }
 
 // Update the isExcluded function to accept path and FileInfo
