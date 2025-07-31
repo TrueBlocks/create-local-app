@@ -1,15 +1,85 @@
 package main
 
 import (
+	"archive/tar"
 	"bufio"
+	"compress/gzip"
+	_ "embed"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 )
+
+//go:embed templates.tar.gz
+var templatesData []byte
+
+// extractTemplates extracts the embedded templates.tar.gz to a temporary directory
+func extractTemplates() (string, error) {
+	// Create a temporary directory
+	tempDir, err := os.MkdirTemp("", "create-local-app-templates-*")
+	if err != nil {
+		return "", fmt.Errorf("failed to create temp directory: %w", err)
+	}
+
+	// Create gzip reader
+	gzipReader, err := gzip.NewReader(strings.NewReader(string(templatesData)))
+	if err != nil {
+		os.RemoveAll(tempDir)
+		return "", fmt.Errorf("failed to create gzip reader: %w", err)
+	}
+	defer gzipReader.Close()
+
+	// Create tar reader
+	tarReader := tar.NewReader(gzipReader)
+
+	// Extract files
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			os.RemoveAll(tempDir)
+			return "", fmt.Errorf("failed to read tar header: %w", err)
+		}
+
+		targetPath := filepath.Join(tempDir, header.Name)
+
+		switch header.Typeflag {
+		case tar.TypeDir:
+			if err := os.MkdirAll(targetPath, os.FileMode(header.Mode)); err != nil {
+				os.RemoveAll(tempDir)
+				return "", fmt.Errorf("failed to create directory %s: %w", targetPath, err)
+			}
+		case tar.TypeReg:
+			// Ensure the directory exists
+			if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
+				os.RemoveAll(tempDir)
+				return "", fmt.Errorf("failed to create parent directory for %s: %w", targetPath, err)
+			}
+
+			file, err := os.OpenFile(targetPath, os.O_CREATE|os.O_WRONLY, os.FileMode(header.Mode))
+			if err != nil {
+				os.RemoveAll(tempDir)
+				return "", fmt.Errorf("failed to create file %s: %w", targetPath, err)
+			}
+
+			if _, err := io.Copy(file, tarReader); err != nil {
+				file.Close()
+				os.RemoveAll(tempDir)
+				return "", fmt.Errorf("failed to write file %s: %w", targetPath, err)
+			}
+			file.Close()
+		}
+	}
+
+	return tempDir, nil
+}
 
 func main() {
 	autoMode, reverseMode, err := parseArgs()
@@ -159,14 +229,27 @@ func main() {
 		}
 	}
 
-	templateDir := os.Getenv("TEMPLATE_SOURCE")
-	if templateDir == "" {
-		templateDir = filepath.Join(execDir, "create-local-app-template")
-	}
-	templateDir, err = filepath.Abs(templateDir)
-	if err != nil {
-		fmt.Println("Failed to resolve template directory:", err)
-		os.Exit(1)
+	// Extract embedded templates to temporary directory
+	var templateDir string
+	customTemplateDir := os.Getenv("TEMPLATE_SOURCE")
+	if customTemplateDir != "" {
+		// Use custom template directory if specified
+		templateDir, err = filepath.Abs(customTemplateDir)
+		if err != nil {
+			fmt.Println("Failed to resolve custom template directory:", err)
+			os.Exit(1)
+		}
+		fmt.Println("Using custom template directory:", templateDir)
+	} else {
+		// Extract embedded templates
+		templateDir, err = extractTemplates()
+		if err != nil {
+			fmt.Println("Failed to extract embedded templates:", err)
+			os.Exit(1)
+		}
+		// Clean up temporary directory when done
+		defer os.RemoveAll(templateDir)
+		fmt.Println("Using embedded templates (extracted to temp dir)")
 	}
 
 	fmt.Println("TEMPLATE_DIR: ", templateDir)

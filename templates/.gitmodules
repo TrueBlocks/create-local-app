@@ -1,3 +1,0 @@
-[submodule "dalle"]
-	path = dalle
-	url = git@github.com:{{ORG_NAME}}/{{ORG_LOWER}}-dalle.git

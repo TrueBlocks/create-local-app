@@ -1,8 +1,0 @@
-[settings]
-class = "Transfers"
-doc_group = "01-Accounts"
-doc_descr = "a movement of an asset from one address to another (derived from a transaction or a log)"
-doc_route = "121-transfer"
-attributes = ""
-produced_by = "export"
-disable_go = true
