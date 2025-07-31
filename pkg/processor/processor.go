@@ -75,7 +75,7 @@ func ApplyTemplateVars(content string, vars *TemplateVars) string {
 	return content
 }
 
-// ReverseTemplateVars reverses template variable replacements (for reverse mode)
+// ReverseTemplateVars reverses template variable replacements (for create mode)
 func ReverseTemplateVars(content string, vars *TemplateVars) string {
 	content = strings.ReplaceAll(content, vars.Chifra, "{{CHIFRA}}")
 	if vars.Domain != "" {

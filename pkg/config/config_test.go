@@ -22,42 +22,42 @@ func TestParseArgs(t *testing.T) {
 		{
 			name:     "no arguments",
 			args:     []string{"program"},
-			wantArgs: &Args{IsAuto: false, IsReverse: false, IsForce: false, TemplateName: ""},
+			wantArgs: &Args{IsAuto: false, IsCreate: false, IsForce: false, TemplateName: ""},
 			wantErr:  false,
 		},
 		{
 			name:     "auto mode",
 			args:     []string{"program", "--auto"},
-			wantArgs: &Args{IsAuto: true, IsReverse: false, IsForce: false, TemplateName: ""},
+			wantArgs: &Args{IsAuto: true, IsCreate: false, IsForce: false, TemplateName: ""},
 			wantErr:  false,
 		},
 		{
-			name:     "reverse mode with valid template name",
-			args:     []string{"program", "--reverse", "my-template-123"},
-			wantArgs: &Args{IsAuto: false, IsReverse: true, IsForce: false, TemplateName: "my-template-123"},
+			name:     "create template mode with valid template name",
+			args:     []string{"program", "--create", "my-template-123"},
+			wantArgs: &Args{IsAuto: false, IsCreate: true, IsForce: false, TemplateName: "my-template-123"},
 			wantErr:  false,
 		},
 		{
-			name:    "reverse mode missing template name",
-			args:    []string{"program", "--reverse"},
+			name:    "create template mode missing template name",
+			args:    []string{"program", "--create"},
 			wantErr: true,
-			errMsg:  "--reverse requires a template name parameter",
+			errMsg:  "--create requires a template name parameter",
 		},
 		{
-			name:    "reverse mode with invalid template name - spaces",
-			args:    []string{"program", "--reverse", "invalid name"},
+			name:    "create template mode with invalid template name - spaces",
+			args:    []string{"program", "--create", "invalid name"},
 			wantErr: true,
 			errMsg:  "invalid template name 'invalid name': must start with alphanumeric and contain only alphanumeric characters and dashes",
 		},
 		{
-			name:    "reverse mode with invalid template name - starts with dash",
-			args:    []string{"program", "--reverse", "-invalid"},
+			name:    "create template mode with invalid template name - starts with dash",
+			args:    []string{"program", "--create", "-invalid"},
 			wantErr: true,
 			errMsg:  "invalid template name '-invalid': must start with alphanumeric and contain only alphanumeric characters and dashes",
 		},
 		{
-			name:    "reverse mode with invalid template name - special chars",
-			args:    []string{"program", "--reverse", "invalid@name"},
+			name:    "create template mode with invalid template name - special chars",
+			args:    []string{"program", "--create", "invalid@name"},
 			wantErr: true,
 			errMsg:  "invalid template name 'invalid@name': must start with alphanumeric and contain only alphanumeric characters and dashes",
 		},
@@ -65,24 +65,24 @@ func TestParseArgs(t *testing.T) {
 			name:    "unknown argument",
 			args:    []string{"program", "--unknown"},
 			wantErr: true,
-			errMsg:  "unknown argument: --unknown (valid options: --reverse <template-name>, --auto, --force, --version, --help)",
+			errMsg:  "unknown argument: --unknown (valid options: --create <template-name>, --auto, --force, --version, --help)",
 		},
 		{
 			name:     "force mode",
 			args:     []string{"program", "--force"},
-			wantArgs: &Args{IsAuto: false, IsReverse: false, IsForce: true, TemplateName: ""},
+			wantArgs: &Args{IsAuto: false, IsCreate: false, IsForce: true, TemplateName: ""},
 			wantErr:  false,
 		},
 		{
 			name:     "auto and force combined",
 			args:     []string{"program", "--auto", "--force"},
-			wantArgs: &Args{IsAuto: true, IsReverse: false, IsForce: true, TemplateName: ""},
+			wantArgs: &Args{IsAuto: true, IsCreate: false, IsForce: true, TemplateName: ""},
 			wantErr:  false,
 		},
 		{
-			name:     "reverse and force combined",
-			args:     []string{"program", "--reverse", "my-template", "--force"},
-			wantArgs: &Args{IsAuto: false, IsReverse: true, IsForce: true, TemplateName: "my-template"},
+			name:     "create template and force combined",
+			args:     []string{"program", "--create", "my-template", "--force"},
+			wantArgs: &Args{IsAuto: false, IsCreate: true, IsForce: true, TemplateName: "my-template"},
 			wantErr:  false,
 		},
 	}
@@ -110,7 +110,7 @@ func TestParseArgs(t *testing.T) {
 				}
 				if args != nil {
 					if args.IsAuto != tt.wantArgs.IsAuto ||
-						args.IsReverse != tt.wantArgs.IsReverse ||
+						args.IsCreate != tt.wantArgs.IsCreate ||
 						args.IsForce != tt.wantArgs.IsForce ||
 						args.TemplateName != tt.wantArgs.TemplateName {
 						t.Errorf("ParseArgs() = %+v, want %+v", args, tt.wantArgs)
@@ -319,15 +319,15 @@ func TestTemplateNameValidation(t *testing.T) {
 		args    []string
 		wantErr bool
 	}{
-		{"valid alphanumeric", []string{"program", "--reverse", "template123"}, false},
-		{"valid with dashes", []string{"program", "--reverse", "my-template-123"}, false},
-		{"valid starting with letter", []string{"program", "--reverse", "a-template"}, false},
-		{"valid starting with number", []string{"program", "--reverse", "1template"}, false},
-		{"invalid with spaces", []string{"program", "--reverse", "my template"}, true},
-		{"invalid starting with dash", []string{"program", "--reverse", "-template"}, true},
-		{"invalid with special chars", []string{"program", "--reverse", "template@123"}, true},
-		{"invalid with underscore", []string{"program", "--reverse", "template_123"}, true},
-		{"invalid empty", []string{"program", "--reverse", ""}, true},
+		{"valid alphanumeric", []string{"program", "--create", "template123"}, false},
+		{"valid with dashes", []string{"program", "--create", "my-template-123"}, false},
+		{"valid starting with letter", []string{"program", "--create", "a-template"}, false},
+		{"valid starting with number", []string{"program", "--create", "1template"}, false},
+		{"invalid with spaces", []string{"program", "--create", "my template"}, true},
+		{"invalid starting with dash", []string{"program", "--create", "-template"}, true},
+		{"invalid with special chars", []string{"program", "--create", "template@123"}, true},
+		{"invalid with underscore", []string{"program", "--create", "template_123"}, true},
+		{"invalid empty", []string{"program", "--create", ""}, true},
 	}
 
 	for _, tt := range tests {

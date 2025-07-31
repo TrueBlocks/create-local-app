@@ -104,7 +104,7 @@ yarn --version    # v1.22.22 or higher
        ├── system/                 # Built-in templates (extracted from binary)
        │   └── default/            # Default Wails project template
        └── contributed/            # Your custom templates
-           └── my-template/        # Created with --reverse mode
+           └── my-template/        # Created with --create mode
    ```
 
    - **Embedded Templates**: System templates are embedded in the binary as compressed archives
@@ -120,7 +120,7 @@ When you first run `create-local-app`, it will interactively prompt you for proj
 
 - `--auto` - Use saved configuration without prompts
 - `--force` - Force operation without confirmation (overwrite existing files)
-- `--reverse <template-name>` - Create a template from the current directory
+- `--create <template-name>` - Create a template from the current directory
 - `--version` - Show version information
 - `--help` - Show help message
 

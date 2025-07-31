@@ -19,7 +19,7 @@ type Config struct {
 // Args represents parsed command line arguments
 type Args struct {
 	IsAuto       bool
-	IsReverse    bool
+	IsCreate     bool
 	IsForce      bool
 	TemplateName string
 }
@@ -38,15 +38,15 @@ func ParseArgs(version string) (*Args, error) {
 			case "--help", "help":
 				printHelp()
 				os.Exit(0)
-			case "--reverse":
+			case "--create":
 				if i+1 >= len(os.Args) {
-					return nil, fmt.Errorf("--reverse requires a template name parameter")
+					return nil, fmt.Errorf("--create requires a template name parameter")
 				}
 				templateName := os.Args[i+1]
 				if !isValidTemplateName(templateName) {
 					return nil, fmt.Errorf("invalid template name '%s': must start with alphanumeric and contain only alphanumeric characters and dashes", templateName)
 				}
-				args.IsReverse = true
+				args.IsCreate = true
 				args.TemplateName = templateName
 				i += 2 // Skip the template name argument
 			case "--auto":
@@ -56,7 +56,7 @@ func ParseArgs(version string) (*Args, error) {
 				args.IsForce = true
 				i++
 			default:
-				return nil, fmt.Errorf("unknown argument: %s (valid options: --reverse <template-name>, --auto, --force, --version, --help)", os.Args[i])
+				return nil, fmt.Errorf("unknown argument: %s (valid options: --create <template-name>, --auto, --force, --version, --help)", os.Args[i])
 			}
 		}
 	}
@@ -71,18 +71,18 @@ func printHelp() {
 	fmt.Println("  create-local-app [options]")
 	fmt.Println()
 	fmt.Println("OPTIONS:")
-	fmt.Println("  --auto                    Use saved configuration without prompts")
-	fmt.Println("  --reverse <template-name> Create a template from the current directory")
-	fmt.Println("  --force                   Force operation without confirmation (overwrite existing files)")
-	fmt.Println("  --version                 Show version information")
-	fmt.Println("  --help                    Show this help message")
+	fmt.Println("  --auto                           Use saved configuration without prompts")
+	fmt.Println("  --create <template-name> Create a template from the current directory")
+	fmt.Println("  --force                          Force operation without confirmation (overwrite existing files)")
+	fmt.Println("  --version                        Show version information")
+	fmt.Println("  --help                           Show this help message")
 	fmt.Println()
 	fmt.Println("EXAMPLES:")
-	fmt.Println("  create-local-app                    # Interactive mode - prompts for project details")
-	fmt.Println("  create-local-app --auto             # Use previously saved configuration")
-	fmt.Println("  create-local-app --force            # Interactive mode - overwrite existing files without confirmation")
-	fmt.Println("  create-local-app --reverse my-app   # Create template from current directory")
-	fmt.Println("  create-local-app --reverse my-app --force  # Create template, overwrite if exists")
+	fmt.Println("  create-local-app                           # Interactive mode - prompts for project details")
+	fmt.Println("  create-local-app --auto                    # Use previously saved configuration")
+	fmt.Println("  create-local-app --force                   # Interactive mode - overwrite existing files without confirmation")
+	fmt.Println("  create-local-app --create my-app  # Create template from current directory")
+	fmt.Println("  create-local-app --create my-app --force  # Create template, overwrite if exists")
 	fmt.Println()
 	fmt.Println("For more information, visit: https://github.com/TrueBlocks/create-local-app")
 }

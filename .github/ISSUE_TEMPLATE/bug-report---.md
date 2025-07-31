@@ -33,7 +33,7 @@ If applicable, add screenshots to help explain your problem.
 **Configuration**
 If applicable, please share your configuration:
 - Template directory: [e.g. default, custom path]
-- Mode used: [e.g. interactive, auto, reverse]
+- Mode used: [e.g. interactive, auto, create]
 - Command executed: [e.g. `./create-local-app --auto`]
 
 **Error Output**

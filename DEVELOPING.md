@@ -45,7 +45,7 @@ The application version is stored in the `VERSION` file at the project root and 
 
 ## Creating Custom Templates
 
-The `create-local-app` tool supports creating custom templates from existing projects using the `--reverse` mode. This allows you to capture your project structure and configurations as reusable templates.
+The `create-local-app` tool supports creating custom templates from existing projects using the `--create` mode. This allows you to capture your project structure and configurations as reusable templates.
 
 ### Creating a Template from Your Project
 
@@ -54,9 +54,9 @@ The `create-local-app` tool supports creating custom templates from existing pro
    cd my-awesome-project
    ```
 
-2. **Create a template using reverse mode**:
+2. **Create a template using create template mode**:
    ```sh
-   create-local-app --reverse my-custom-template
+   create-local-app --create my-custom-template
    ```
 
 3. **Template storage location**:
@@ -67,10 +67,10 @@ The `create-local-app` tool supports creating custom templates from existing pro
 
 ### How Templates Are Processed
 
-When creating a template with `--reverse`, the tool:
+When creating a template with `--create`, the tool:
 
 - **Excludes build artifacts**: Automatically skips `.git/`, `node_modules/`, `dist/`, and other generated files
-- **Reverse template variables**: Converts your actual values back to template variables (e.g., "my-awesome-project" becomes `{{PROJECT_NAME}}`)
+- **Create template variables**: Converts your actual values back to template variables (e.g., "my-awesome-project" becomes `{{PROJECT_NAME}}`)
 - **Preserves structure**: Maintains your directory structure and file permissions
 - **Stores contributed templates**: Places custom templates in the `contributed/` folder to distinguish them from system templates
 
@@ -95,7 +95,7 @@ create-local-app --template my-custom-template --auto --force
 ├── system/                     # Built-in templates (managed by the tool)
 │   └── default/               # Default Wails project template
 └── contributed/               # Your custom templates
-    ├── my-custom-template/    # Created with --reverse
+    ├── my-custom-template/    # Created with --create
     ├── react-template/        # Another custom template
     └── minimal-template/      # Minimal project template
 ```

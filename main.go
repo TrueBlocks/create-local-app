@@ -41,7 +41,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if args.IsReverse {
+	if args.IsCreate {
 		err := templates.CreateTemplate(args.TemplateName)
 		if err != nil {
 			fmt.Printf("Error creating template: %v\n", err)
@@ -56,7 +56,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if !args.IsReverse {
+	if !args.IsCreate {
 		dirEntries, err := os.ReadDir(projectDir)
 		if err != nil {
 			fmt.Println("Failed to read project directory:", err)
@@ -76,7 +76,7 @@ func main() {
 		wailsJsonPath := filepath.Join(projectDir, "wails.json")
 		if _, err := os.Stat(wailsJsonPath); os.IsNotExist(err) {
 			fmt.Println("Error: wails.json not found in the current directory.")
-			fmt.Println("Reverse mode requires a valid Wails project directory.")
+			fmt.Println("Create template mode requires a valid Wails project directory.")
 			os.Exit(1)
 		}
 	}
@@ -108,7 +108,7 @@ func main() {
 	domain := appConfig.Domain
 	chifra := "github.com/TrueBlocks/trueblocks-core/src/apps/chifra"
 
-	if !args.IsReverse && !args.IsAuto {
+	if !args.IsCreate && !args.IsAuto {
 		reader := bufio.NewReader(os.Stdin)
 
 		fmt.Printf("Organization [%s]: ", appConfig.Organization)
@@ -139,8 +139,8 @@ func main() {
 			domain = domainInput
 		}
 	} else {
-		if args.IsReverse {
-			fmt.Println("Running in reverse mode with default values:")
+		if args.IsCreate {
+			fmt.Println("Running in create template mode with default values:")
 		} else {
 			fmt.Println("Running in auto mode with default values:")
 		}
@@ -175,7 +175,7 @@ func main() {
 	orgName := strings.TrimSpace(parts[0])
 	slug := strings.ToLower(orgName) + "-" + projectName
 
-	if !args.IsReverse && !args.IsAuto {
+	if !args.IsCreate && !args.IsAuto {
 		newConfig := &config.Config{
 			Organization: organization,
 			ProjectName:  projectName,
@@ -239,7 +239,7 @@ func main() {
 		Chifra:         chifra,
 	}
 
-	if !args.IsReverse {
+	if !args.IsCreate {
 		err = filepath.Walk(templateDir, func(path string, info fs.FileInfo, err error) error {
 			if err != nil {
 				return err
@@ -261,7 +261,7 @@ func main() {
 			return os.WriteFile(targetPath, []byte(content), info.Mode())
 		})
 	} else {
-		fmt.Println("Reverse mode: Updating template from current project")
+		fmt.Println("Create template mode: Updating template from current project")
 
 		filesToCopy := make(map[string]bool)
 		err = filepath.Walk(projectDir, func(path string, info fs.FileInfo, err error) error {
@@ -359,7 +359,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if !args.IsReverse && !args.IsAuto {
+	if !args.IsCreate && !args.IsAuto {
 		os.Remove(filepath.Join(projectDir, ".wails-template.json"))
 		fmt.Println("✅ Project created at", projectDir)
 		fmt.Println()
