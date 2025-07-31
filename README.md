@@ -24,12 +24,10 @@
   - [Usage](#usage)
     - [Interactive Mode (Default)](#interactive-mode-default)
     - [Auto Mode](#auto-mode)
-    - [Reverse Mode](#reverse-mode)
     - [Example Workflow](#example-workflow)
   - [Operation Modes](#operation-modes)
     - [📝 Interactive Mode](#-interactive-mode)
     - [⚡ Auto Mode](#-auto-mode)
-    - [🔄 Reverse Mode](#-reverse-mode)
   - [Template Variables](#template-variables)
   - [Roadmap](#roadmap)
   - [Contributing](#contributing)
@@ -46,7 +44,7 @@ Here's why Create Local App is essential for TrueBlocks development:
 
 - **Speed**: Generate a complete desktop application structure in seconds
 - **Consistency**: Ensures all projects follow the same structure and best practices
-- **Flexibility**: Supports both forward (template → project) and reverse (project → template) operations
+- **Flexibility**: Supports template-based project generation with configurable variables
 - **Configuration**: Maintains persistent configuration for faster subsequent project creation
 - **Integration**: Built specifically for TrueBlocks ecosystem with Wails framework
 
@@ -148,16 +146,6 @@ Skip prompts and use previously saved configuration:
 
 *Note: Requires running interactive mode first to create the configuration file.*
 
-### Reverse Mode
-
-Update the template from an existing project:
-
-```sh
-./create-local-app --reverse
-```
-
-*Note: Must be run from within a valid Wails project directory (containing `wails.json`).*
-
 ### Example Workflow
 
 ```sh
@@ -188,13 +176,6 @@ wails dev
 - **Requirements**: Must have run interactive mode first
 - **Use Case**: Rapid prototyping or multiple similar projects
 
-### 🔄 Reverse Mode
-
-- **Purpose**: Update template from an existing project
-- **Behavior**: Copies current project back to template with variable substitution
-- **Requirements**: Must be in a valid Wails project directory
-- **Use Case**: Template maintenance and updates
-
 ## Template Variables
 
 The following variables are automatically replaced during project generation:
@@ -217,7 +198,6 @@ The following variables are automatically replaced during project generation:
 
 - [x] Interactive project creation
 - [x] Auto mode for rapid development
-- [x] Reverse mode for template updates
 - [x] Configurable template variables
 - [x] File exclusion system
 - [ ] Custom template support
