@@ -58,8 +58,10 @@ Before using `create-local-app`, ensure you have the required versions of these 
 **Required versions:**
 
 - **Go**: v1.23.1 or higher
-- **TrueBlocks**: v5.1.0 or higher
+- **TrueBlocks**: v5.1.0 or higher  
 - **Wails**: v2.10.1 or higher
+
+**For contributors only:**
 - **Yarn**: v1.22.22 or higher (for development tooling)
 
 **Check your versions:**
@@ -68,7 +70,7 @@ Before using `create-local-app`, ensure you have the required versions of these 
 go version
 chifra version
 wails version
-yarn --version
+# For contributors: yarn --version
 ```
 
 ### Installation
@@ -79,30 +81,11 @@ yarn --version
    git clone https://github.com/TrueBlocks/create-local-app.git
    cd create-local-app
    
-   # Using yarn script (recommended)
-   yarn build
-   
-   # OR build directly with Go
+   # Build the Go binary
    go build -o bin/create-local-app main.go
    ```
 
-2. **Development setup**
-
-   ```sh
-   # Install dependencies (for linting and tooling)
-   yarn install
-   
-   # Run linter
-   yarn lint
-   
-   # Run markdown linter
-   yarn lint:md
-   
-   # Clean build artifacts
-   yarn clean
-   ```
-
-3. **Add to your PATH** (required)
+2. **Install to your PATH** (required)
 
    ```sh
    # Copy to a system location
@@ -112,11 +95,17 @@ yarn --version
    export PATH="$PATH:$(pwd)/bin"
    ```
 
-4. **Set up template directory** (optional)
+3. **For contributors only** (optional development tooling)
 
    ```sh
-   # If you have a custom template directory
-   export TEMPLATE_SOURCE=/path/to/your/template
+   # Install linting tools (requires Node.js/Yarn)
+   yarn install
+   
+   # Available development commands:
+   yarn build       # Build the Go binary
+   yarn lint        # Run Go linter (golangci-lint)
+   yarn lint:md     # Run Markdown linter
+   yarn clean       # Clean build artifacts
    ```
 
 ## Usage
