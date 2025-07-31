@@ -1,0 +1,17 @@
+{
+  "folders": [
+    {
+      "path": "."
+    },
+    {
+      "path": "pkg/dalle"
+    }
+  ],
+  "settings": {
+    "gopls": {
+      "analyses": {
+        "infertypeargs": false
+      }
+    }
+  }
+}

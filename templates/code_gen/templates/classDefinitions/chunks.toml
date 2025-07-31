@@ -1,0 +1,29 @@
+[settings]
+class = "Chunks"
+doc_group = "001-Route"
+doc_descr = "internal-use only data model detailing a single index chunk file"
+doc_route = "500-chunks"
+attributes = ""
+produced_by = "chunks"
+disable_go = false
+
+[[facets]]
+name = "Stats"
+store = "Stats"
+viewType = ""
+
+[[facets]]
+name = "Index"
+store = "Index"
+viewType = ""
+
+[[facets]]
+name = "Blooms"
+store = "Blooms"
+viewType = ""
+
+[[facets]]
+name = "Manifest"
+store = "Manifest"
+viewType = "dashboard"
+

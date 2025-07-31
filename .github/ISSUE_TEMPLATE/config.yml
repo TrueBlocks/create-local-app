@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 GitHub Discussions
+    url: https://github.com/TrueBlocks/create-local-app/discussions
+    about: Ask questions and discuss ideas with the community
+  - name: 📖 Documentation
+    url: https://github.com/TrueBlocks/create-local-app#readme
+    about: Read the project documentation and usage guide
+  - name: 🌐 TrueBlocks Website
+    url: https://trueblocks.io/
+    about: Learn more about the TrueBlocks ecosystem

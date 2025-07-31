@@ -1,0 +1,20 @@
+# Markdownlint configuration file
+# This file suppresses specific linting rules for GitHub issue templates
+# and other markdown files in the project
+
+# MD007/ul-indent - Unordered list indentation
+# Disabled because GitHub issue templates often use indented lists for readability
+MD007: false
+
+# MD031/blanks-around-fences - Fenced code blocks should be surrounded by blank lines
+# Disabled because issue templates may have tight formatting requirements
+MD031: false
+
+# MD032/blanks-around-lists - Lists should be surrounded by blank lines
+# Disabled because GitHub issue templates often have lists without surrounding blank lines
+# for compact formatting
+MD032: false
+
+# MD040/fenced-code-language - Fenced code blocks should have a language specified
+# Disabled because issue templates may have placeholder code blocks without specific languages
+MD040: false

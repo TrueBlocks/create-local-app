@@ -1,0 +1,46 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "useDefineForClassFields": true,
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "esModuleInterop": false,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "noUncheckedIndexedAccess": true,
+    "types": [
+      "vitest/globals",
+      "@testing-library/jest-dom",
+      "@testing-library/dom"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@components": ["src/components"],
+      "@contexts": ["src/contexts"],
+      "@hooks": ["src/hooks"],
+      "@layout": ["src/layout"],
+      "@views": ["src/views"],
+      "@wizards": ["src/wizards"],
+      "@utils": ["src/utils"],
+      "@stores": ["src/stores"],
+      "@runtime": ["wailsjs/runtime"],
+      "@app": ["wailsjs/go/app/App"],
+      "@names": ["wailsjs/go/names/NamesCollection"],
+      "@models": ["wailsjs/go/models"]
+    }
+  },
+  "include": ["src", "wailsjs", "tests"],
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ]
+}

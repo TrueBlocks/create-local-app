@@ -1,0 +1,31 @@
+[settings]
+class = "Abis"
+doc_group = "001-Route"
+doc_descr = "a human-readable representation of a Solidity smart contract"
+doc_route = "300-abis"
+attributes = ""
+produced_by = "abis"
+contains = "function"
+disable_go = false
+
+[[facets]]
+name = "Downloaded"
+store = "Abis"
+cruds = ["remove"]
+viewType = ""
+
+[[facets]]
+name = "Known"
+store = "Abis"
+viewType = ""
+
+[[facets]]
+name = "Functions"
+store = "Functions"
+viewType = ""
+
+[[facets]]
+name = "Events"
+store = "Functions"
+viewType = ""
+
