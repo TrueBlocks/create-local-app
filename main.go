@@ -17,8 +17,12 @@ import (
 //go:embed templates/system/*.tar.gz
 var systemTemplatesFS embed.FS
 
+//go:embed VERSION
+var versionContent string
+
 func main() {
-	args, err := config.ParseArgs()
+	version := strings.TrimSpace(versionContent)
+	args, err := config.ParseArgs(version)
 	if err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)
@@ -58,15 +62,11 @@ func main() {
 			os.Exit(1)
 		}
 		if len(dirEntries) > 0 && !args.IsAuto {
-			fmt.Println("The current directory (" + projectDir + ") contains files.")
-			fmt.Println("Proceeding will overwrite existing files in an unrecoverable way.")
-			fmt.Print("Are you sure you want to proceed? (Y/n): ")
-			reader := bufio.NewReader(os.Stdin)
-			confirmation, _ := reader.ReadString('\n')
-			confirmation = strings.TrimSpace(confirmation)
-			if confirmation != "" && confirmation != "y" && confirmation != "Y" && confirmation != "yes" && confirmation != "Yes" {
-				fmt.Println("Operation cancelled.")
-				os.Exit(0)
+			if !args.IsForce {
+				fmt.Println("The current directory (" + projectDir + ") contains files.")
+				fmt.Println("Proceeding will overwrite existing files in an unrecoverable way.")
+				fmt.Println("Use --force flag to proceed without this check.")
+				os.Exit(1)
 			}
 		}
 	} else {

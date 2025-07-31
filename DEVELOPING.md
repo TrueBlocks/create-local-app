@@ -33,6 +33,15 @@ go run main.go
 go build -o bin/create-local-app main.go
 ```
 
+### Version Management
+
+The application version is stored in the `VERSION` file at the project root and is embedded into the binary at build time using Go's `//go:embed` directive. To update the version:
+
+1. Edit the `VERSION` file (contains only the version string, e.g., "0.2.0")
+2. Rebuild the binary - Go will automatically detect the change and rebuild
+3. The new version will be available via `--version` command
+
+
 ## Template Variables
 
 The following variables are automatically replaced during project generation when the tool processes template files:

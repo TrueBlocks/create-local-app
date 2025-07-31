@@ -8,6 +8,10 @@ import (
 )
 
 func TestParseArgs(t *testing.T) {
+	// Note: --version and --help commands are not tested here as they call os.Exit()
+	// and are trivially simple (just print and exit). Testing them would add unnecessary
+	// complexity with process spawning or exit mocking for minimal benefit.
+
 	tests := []struct {
 		name     string
 		args     []string
@@ -18,19 +22,19 @@ func TestParseArgs(t *testing.T) {
 		{
 			name:     "no arguments",
 			args:     []string{"program"},
-			wantArgs: &Args{IsAuto: false, IsReverse: false, TemplateName: ""},
+			wantArgs: &Args{IsAuto: false, IsReverse: false, IsForce: false, TemplateName: ""},
 			wantErr:  false,
 		},
 		{
 			name:     "auto mode",
 			args:     []string{"program", "--auto"},
-			wantArgs: &Args{IsAuto: true, IsReverse: false, TemplateName: ""},
+			wantArgs: &Args{IsAuto: true, IsReverse: false, IsForce: false, TemplateName: ""},
 			wantErr:  false,
 		},
 		{
 			name:     "reverse mode with valid template name",
 			args:     []string{"program", "--reverse", "my-template-123"},
-			wantArgs: &Args{IsAuto: false, IsReverse: true, TemplateName: "my-template-123"},
+			wantArgs: &Args{IsAuto: false, IsReverse: true, IsForce: false, TemplateName: "my-template-123"},
 			wantErr:  false,
 		},
 		{
@@ -61,45 +65,57 @@ func TestParseArgs(t *testing.T) {
 			name:    "unknown argument",
 			args:    []string{"program", "--unknown"},
 			wantErr: true,
-			errMsg:  "unknown argument: --unknown (valid options: --reverse <template-name>, --auto)",
+			errMsg:  "unknown argument: --unknown (valid options: --reverse <template-name>, --auto, --force, --version, --help)",
+		},
+		{
+			name:     "force mode",
+			args:     []string{"program", "--force"},
+			wantArgs: &Args{IsAuto: false, IsReverse: false, IsForce: true, TemplateName: ""},
+			wantErr:  false,
+		},
+		{
+			name:     "auto and force combined",
+			args:     []string{"program", "--auto", "--force"},
+			wantArgs: &Args{IsAuto: true, IsReverse: false, IsForce: true, TemplateName: ""},
+			wantErr:  false,
+		},
+		{
+			name:     "reverse and force combined",
+			args:     []string{"program", "--reverse", "my-template", "--force"},
+			wantArgs: &Args{IsAuto: false, IsReverse: true, IsForce: true, TemplateName: "my-template"},
+			wantErr:  false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Save original os.Args
-			originalArgs := os.Args
-			defer func() { os.Args = originalArgs }()
+			// Save and restore original os.Args
+			oldArgs := os.Args
+			defer func() { os.Args = oldArgs }()
 
-			// Set test args
+			// Set test arguments
 			os.Args = tt.args
 
-			args, err := ParseArgs()
+			args, err := ParseArgs("test-version")
 
 			if tt.wantErr {
 				if err == nil {
-					t.Errorf("ParseArgs() expected error but got none")
-					return
-				}
-				if err.Error() != tt.errMsg {
+					t.Errorf("ParseArgs() expected error, got none")
+				} else if tt.errMsg != "" && err.Error() != tt.errMsg {
 					t.Errorf("ParseArgs() error = %v, want %v", err.Error(), tt.errMsg)
 				}
-				return
-			}
-
-			if err != nil {
-				t.Errorf("ParseArgs() unexpected error = %v", err)
-				return
-			}
-
-			if args.IsAuto != tt.wantArgs.IsAuto {
-				t.Errorf("ParseArgs() IsAuto = %v, want %v", args.IsAuto, tt.wantArgs.IsAuto)
-			}
-			if args.IsReverse != tt.wantArgs.IsReverse {
-				t.Errorf("ParseArgs() IsReverse = %v, want %v", args.IsReverse, tt.wantArgs.IsReverse)
-			}
-			if args.TemplateName != tt.wantArgs.TemplateName {
-				t.Errorf("ParseArgs() TemplateName = %v, want %v", args.TemplateName, tt.wantArgs.TemplateName)
+			} else {
+				if err != nil {
+					t.Errorf("ParseArgs() unexpected error: %v", err)
+				}
+				if args != nil {
+					if args.IsAuto != tt.wantArgs.IsAuto ||
+						args.IsReverse != tt.wantArgs.IsReverse ||
+						args.IsForce != tt.wantArgs.IsForce ||
+						args.TemplateName != tt.wantArgs.TemplateName {
+						t.Errorf("ParseArgs() = %+v, want %+v", args, tt.wantArgs)
+					}
+				}
 			}
 		})
 	}
@@ -320,7 +336,7 @@ func TestTemplateNameValidation(t *testing.T) {
 			defer func() { os.Args = originalArgs }()
 
 			os.Args = tt.args
-			_, err := ParseArgs()
+			_, err := ParseArgs("test-version")
 
 			if tt.wantErr && err == nil {
 				t.Errorf("Expected error for template name validation but got none")

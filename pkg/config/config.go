@@ -20,29 +20,71 @@ type Config struct {
 type Args struct {
 	IsAuto       bool
 	IsReverse    bool
+	IsForce      bool
 	TemplateName string
 }
 
-// ParseArgs parses command line arguments
-func ParseArgs() (*Args, error) {
+// ParseArgs parses command line arguments and returns Args struct or handles special commands
+func ParseArgs(version string) (*Args, error) {
+	args := &Args{}
+
 	if len(os.Args) > 1 {
-		switch os.Args[1] {
-		case "--reverse":
-			if len(os.Args) < 3 {
-				return nil, fmt.Errorf("--reverse requires a template name parameter")
+		i := 1
+		for i < len(os.Args) {
+			switch os.Args[i] {
+			case "--version", "version":
+				fmt.Printf("create-local-app version %s\n", version)
+				os.Exit(0)
+			case "--help", "help":
+				printHelp()
+				os.Exit(0)
+			case "--reverse":
+				if i+1 >= len(os.Args) {
+					return nil, fmt.Errorf("--reverse requires a template name parameter")
+				}
+				templateName := os.Args[i+1]
+				if !isValidTemplateName(templateName) {
+					return nil, fmt.Errorf("invalid template name '%s': must start with alphanumeric and contain only alphanumeric characters and dashes", templateName)
+				}
+				args.IsReverse = true
+				args.TemplateName = templateName
+				i += 2 // Skip the template name argument
+			case "--auto":
+				args.IsAuto = true
+				i++
+			case "--force":
+				args.IsForce = true
+				i++
+			default:
+				return nil, fmt.Errorf("unknown argument: %s (valid options: --reverse <template-name>, --auto, --force, --version, --help)", os.Args[i])
 			}
-			templateName := os.Args[2]
-			if !isValidTemplateName(templateName) {
-				return nil, fmt.Errorf("invalid template name '%s': must start with alphanumeric and contain only alphanumeric characters and dashes", templateName)
-			}
-			return &Args{IsReverse: true, TemplateName: templateName}, nil
-		case "--auto":
-			return &Args{IsAuto: true}, nil
-		default:
-			return nil, fmt.Errorf("unknown argument: %s (valid options: --reverse <template-name>, --auto)", os.Args[1])
 		}
 	}
-	return &Args{}, nil
+	return args, nil
+}
+
+// printHelp displays usage information
+func printHelp() {
+	fmt.Println("create-local-app - A powerful Go-based scaffolding tool for TrueBlocks/Wails desktop applications")
+	fmt.Println()
+	fmt.Println("USAGE:")
+	fmt.Println("  create-local-app [options]")
+	fmt.Println()
+	fmt.Println("OPTIONS:")
+	fmt.Println("  --auto                    Use saved configuration without prompts")
+	fmt.Println("  --reverse <template-name> Create a template from the current directory")
+	fmt.Println("  --force                   Force operation without confirmation (overwrite existing files)")
+	fmt.Println("  --version                 Show version information")
+	fmt.Println("  --help                    Show this help message")
+	fmt.Println()
+	fmt.Println("EXAMPLES:")
+	fmt.Println("  create-local-app                    # Interactive mode - prompts for project details")
+	fmt.Println("  create-local-app --auto             # Use previously saved configuration")
+	fmt.Println("  create-local-app --force            # Interactive mode - overwrite existing files without confirmation")
+	fmt.Println("  create-local-app --reverse my-app   # Create template from current directory")
+	fmt.Println("  create-local-app --reverse my-app --force  # Create template, overwrite if exists")
+	fmt.Println()
+	fmt.Println("For more information, visit: https://github.com/TrueBlocks/create-local-app")
 }
 
 // isValidTemplateName validates that a template name starts with alphanumeric

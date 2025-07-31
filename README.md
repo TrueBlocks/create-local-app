@@ -81,12 +81,17 @@ wails version
 2. **Install to your PATH** (recommended)
 
    ```sh
-   # Copy to a system location
-   sudo cp bin/create-local-app /usr/local/bin/
+   # Option 1: Use the deploy script (easiest)
+   yarn deploy
+   
+   # Option 2: Manual installation
+   cp bin/create-local-app /usr/local/bin/
    
    # OR (temporarily) add the bin directory to your PATH
    export PATH="$PATH:$(pwd)/bin"
    ```
+
+   > **📝 Note:** If you get a permission error with `yarn deploy`, you may need to use `sudo yarn deploy`. This can happen if there's an existing file in `/usr/local/bin/` that was previously installed with sudo.
 
    > **✅ Self-Contained:** The binary now contains embedded templates and is completely self-contained. Configuration and templates are automatically managed in `~/.create-local-app/` on first run.
 
@@ -117,13 +122,23 @@ wails version
    
    # Available development commands:
    yarn build       # Build the Go binary
+   yarn deploy      # Install binary to /usr/local/bin and verify
    yarn lint        # Run Go and Markdown linters
    yarn clean       # Clean build artifacts
+   yarn test        # Run Go tests
    ```
 
 ## Usage
 
 When you first run `create-local-app`, it will interactively prompt you for project information and save your preferences for future use. Subsequent runs can use the `--auto` flag to skip prompts if nothing has changed.
+
+### Command Line Options
+
+- `--auto` - Use saved configuration without prompts
+- `--force` - Force operation without confirmation (overwrite existing files)
+- `--reverse <template-name>` - Create a template from the current directory
+- `--version` - Show version information
+- `--help` - Show help message
 
 ### Interactive Mode (First Run)
 
@@ -140,7 +155,7 @@ You'll be prompted for:
 - **Go Import**: For importing Go packages - no spaces allowed (e.g., "github.com/TrueBlocks/my-awesome-app")
 - **Domain**: The domain name of your home page (e.g., "trueblocks.io")
 
-> **⚠️ Warning:** Running this command will overwrite existing files in the current directory. If you've made modifications to generated files, they will be lost. Make sure to commit your changes to version control before re-running.
+> **⚠️ Warning:** If the current directory contains files, the operation will fail unless you use the `--force` flag. This prevents accidental overwrites of existing work.
 
 ### Auto Mode (Subsequent Runs)
 
@@ -150,7 +165,19 @@ Skip prompts and use previously saved configuration:
 create-local-app --auto
 ```
 
-*Note: This uses the configuration saved from your previous interactive run and also overwrites existing files.*
+*Note: This uses the configuration saved from your previous interactive run and also requires `--force` if files exist.*
+
+### Force Mode
+
+Override the safety check that prevents overwriting existing files:
+
+```sh
+create-local-app --force
+# or
+create-local-app --auto --force
+```
+
+> **⚠️ Warning:** The `--force` flag will overwrite existing files in an unrecoverable way. Make sure to commit your changes to version control before using this flag.
 
 ### Example Workflow
 
@@ -171,6 +198,14 @@ yarn test
 
 # 4. Start the new app
 yarn start
+
+# 5. Later, if you need to regenerate (e.g., after template updates)
+# This will fail safely if files exist:
+create-local-app --auto
+    # Error: directory contains files, use --force
+
+# Use --force to override safety check:
+create-local-app --auto --force
 ```
 
 ## Contributing
