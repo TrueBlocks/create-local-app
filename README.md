@@ -4,13 +4,13 @@
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
-[![MIT License][license-shield]][license-url]
+[![GPL 3.0 License][license-shield]][license-url]
 
 **A powerful Go-based scaffolding tool for TrueBlocks/Wails desktop applications**
 
 [**Explore the docs »**](https://github.com/TrueBlocks/create-local-app)
 
-[View Demo](https://github.com/TrueBlocks/create-local-app) · [Report Bug](https://github.com/TrueBlocks/create-local-app/issues/new?labels=bug&template=bug-report---.md) · [Request Feature](https://github.com/TrueBlocks/create-local-app/issues/new?labels=enhancement&template=feature-request---.md)
+[Report Bug](https://github.com/TrueBlocks/create-local-app/issues/new?labels=bug&template=bug-report---.md) · [Request Feature](https://github.com/TrueBlocks/create-local-app/issues/new?labels=enhancement&template=feature-request---.md)
 
 ## Table of Contents
 
@@ -32,23 +32,14 @@
   - [Roadmap](#roadmap)
   - [Contributing](#contributing)
     - [Development Setup](#development-setup)
+    - [Development Setup](#development-setup-1)
   - [License](#license)
   - [Contact](#contact)
   - [Acknowledgments](#acknowledgments)
 
 ## About The Project
 
-Create Local App is a sophisticated scaffolding tool designed to streamline the creation of TrueBlocks/Wails desktop applications. With a single command, it generates a complete project structure with Go backend and TypeScript frontend, handling all the boilerplate code and configuration for you.
-
-Here's why Create Local App is essential for TrueBlocks development:
-
-- **Speed**: Generate a complete desktop application structure in seconds
-- **Consistency**: Ensures all projects follow the same structure and best practices
-- **Flexibility**: Supports template-based project generation with configurable variables
-- **Configuration**: Maintains persistent configuration for faster subsequent project creation
-- **Integration**: Built specifically for TrueBlocks ecosystem with Wails framework
-
-The tool operates with configurable templates and supports multiple operation modes to fit different development workflows.
+`create-local-app` is a sophisticated scaffolding tool designed to streamline the creation of TrueBlocks/Wails desktop applications. With a single command, it generates a complete project structure with Go backend and TypeScript frontend, handling all the boilerplate code and configuration for you.
 
 ### Built With
 
@@ -65,34 +56,23 @@ To get a local copy up and running, follow these simple steps.
 
 ### Prerequisites
 
-Before using Create Local App, ensure you have the following installed:
+Before using `create-local-app`, ensure you have the required versions of these tools. Click on the badges in the [Built With](#built-with) section below for installation instructions.
 
-- **Go** (version 1.19 or higher)
+**Required versions:**
 
-  ```sh
-  # On macOS using Homebrew
-  brew install go
-  
-  # On Ubuntu/Debian
-  sudo apt install golang-go
-  
-  # Verify installation
-  go version
-  ```
+- **Go**: v1.23.1 or higher
+- **TrueBlocks**: v5.1.0 or higher
+- **Wails**: v2.10.1 or higher
+- **Yarn**: v1.22.22 or higher (for development tooling)
 
-- **Wails CLI** (for desktop app development)
+**Check your versions:**
 
-  ```sh
-  go install github.com/wailsapp/wails/v2/cmd/wails@latest
-  ```
-
-- **Node.js and Yarn** (for frontend dependencies)
-
-  ```sh
-  # Install Node.js from https://nodejs.org
-  # Then install Yarn
-  npm install -g yarn
-  ```
+```sh
+go version
+chifra version
+wails version
+yarn --version
+```
 
 ### Installation
 
@@ -101,19 +81,41 @@ Before using Create Local App, ensure you have the following installed:
    ```sh
    git clone https://github.com/TrueBlocks/create-local-app.git
    cd create-local-app
+   
+   # Using yarn script (recommended)
+   yarn build
+   
+   # OR build directly with Go
    go build -o bin/create-local-app main.go
    ```
 
-2. **Add to your PATH** (optional)
+2. **Development setup**
 
    ```sh
-   # Add the bin directory to your PATH, or copy the binary to a PATH location
-   export PATH="$PATH:$(pwd)/bin"
-   # OR copy to a system location
-   sudo cp bin/create-local-app /usr/local/bin/
+   # Install dependencies (for linting and tooling)
+   yarn install
+   
+   # Run linter
+   yarn lint
+   
+   # Run markdown linter
+   yarn lint:md
+   
+   # Clean build artifacts
+   yarn clean
    ```
 
-3. **Set up template directory** (optional)
+3. **Add to your PATH** (required)
+
+   ```sh
+   # Copy to a system location
+   sudo cp bin/create-local-app /usr/local/bin/
+   
+   # OR add the bin directory to your PATH
+   export PATH="$PATH:$(pwd)/bin"
+   ```
+
+4. **Set up template directory** (optional)
 
    ```sh
    # If you have a custom template directory
@@ -122,14 +124,14 @@ Before using Create Local App, ensure you have the following installed:
 
 ## Usage
 
-Create Local App supports three main operation modes, each designed for different use cases:
+`create-local-app` supports three main operation modes, each designed for different use cases:
 
 ### Interactive Mode (Default)
 
 The default mode provides a guided setup experience:
 
 ```sh
-bin/create-local-app
+create-local-app
 ```
 
 You'll be prompted for:
@@ -144,7 +146,7 @@ You'll be prompted for:
 Skip prompts and use previously saved configuration:
 
 ```sh
-bin/create-local-app --auto
+create-local-app --auto
 ```
 
 *Note: Requires running interactive mode first to create the configuration file.*
@@ -154,9 +156,7 @@ bin/create-local-app --auto
 ```sh
 # 1. Create a new project interactively
 mkdir my-new-app && cd my-new-app
-/path/to/create-local-app/bin/create-local-app
-# OR if it's in your PATH:
-# create-local-app
+create-local-app
 
 # 2. Set up the project
 cd frontend && yarn install && cd ..
@@ -229,6 +229,27 @@ Don't forget to give the project a star! Thanks again!
 
 ### Development Setup
 
+For contributors, additional development tools are available:
+
+```sh
+# Install development dependencies
+yarn install
+
+# Available yarn scripts:
+yarn build       # Build the Go binary
+yarn lint        # Run Go linter (golangci-lint)
+yarn lint:md     # Run Markdown linter
+yarn clean       # Clean build artifacts
+yarn test        # Run Go tests
+```
+
+**Quality Assurance:**
+- Go code is linted with `golangci-lint`
+- Markdown files are linted with `markdownlint`
+- All contributions should pass linting checks
+
+### Development Setup
+
 ```sh
 # Clone the repository
 git clone https://github.com/TrueBlocks/create-local-app.git
@@ -243,7 +264,7 @@ go build -o bin/create-local-app main.go
 
 ## License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+Distributed under the GPL 3.0 License. See `LICENSE` for more information.
 
 ## Contact
 

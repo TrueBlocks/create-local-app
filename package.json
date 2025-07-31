@@ -1,0 +1,38 @@
+{
+  "name": "create-local-app",
+  "version": "1.0.0",
+  "description": "A powerful Go-based scaffolding tool for TrueBlocks/Wails desktop applications",
+  "main": "main.go",
+  "scripts": {
+    "build": "go build -o bin/create-local-app main.go",
+    "lint": "golangci-lint run",
+    "lint:md": "markdownlint README.md .github/ISSUE_TEMPLATE/*.md",
+    "clean": "rm -rf bin/",
+    "test": "go test ./..."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TrueBlocks/create-local-app.git"
+  },
+  "keywords": [
+    "go",
+    "wails",
+    "trueblocks",
+    "scaffolding",
+    "desktop-app",
+    "template",
+    "cli"
+  ],
+  "author": "TrueBlocks",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/TrueBlocks/create-local-app/issues"
+  },
+  "homepage": "https://github.com/TrueBlocks/create-local-app#readme",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "devDependencies": {
+    "markdownlint-cli": "^0.45.0"
+  }
+}
