@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/TrueBlocks/create-local-app/pkg/config"
@@ -61,6 +62,8 @@ func main() {
 			fmt.Println("Failed to read project directory:", err)
 			os.Exit(1)
 		}
+		// Remove ".git" if present (.git is okay since we don't replace it)
+		dirEntries = slices.DeleteFunc(dirEntries, func(e os.DirEntry) bool { return e.Name() == ".git" })
 		if len(dirEntries) > 0 && !args.IsAuto {
 			if !args.IsForce {
 				fmt.Println("The current directory (" + projectDir + ") contains files.")
