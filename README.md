@@ -147,7 +147,10 @@ create-local-app
 # 2. Set up the my-new-app project
 yarn install
 
-# 3. Start the new app
+# 3. Testing
+yarn test
+
+# 4. Start the new app
 yarn start
 ```
 
