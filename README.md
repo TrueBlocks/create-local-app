@@ -19,8 +19,10 @@
     - [Prerequisites](#prerequisites)
     - [Installation](#installation)
   - [Usage](#usage)
+    - [Command Line Options](#command-line-options)
     - [Interactive Mode (First Run)](#interactive-mode-first-run)
     - [Auto Mode (Subsequent Runs)](#auto-mode-subsequent-runs)
+    - [Force Mode](#force-mode)
     - [Example Workflow](#example-workflow)
   - [Contributing](#contributing)
   - [License](#license)
@@ -190,16 +192,20 @@ create-local-app
     # > github.com/TrueBlocks/my-new-app
     # > https://trueblocks.io 
 
-# 2. Set up the my-new-app project
+# 2. Initialize git repository and submodules
+git init
+git submodule update --init --recursive
+
+# 3. Set up the my-new-app project
 yarn install
 
-# 3. Testing
+# 4. Testing
 yarn test
 
-# 4. Start the new app
+# 5. Start the new app
 yarn start
 
-# 5. Later, if you need to regenerate (e.g., after template updates)
+# 6. Later, if you need to regenerate (e.g., after template updates)
 # This will fail safely if files exist:
 create-local-app --auto
     # Error: directory contains files, use --force
