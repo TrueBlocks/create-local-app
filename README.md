@@ -53,7 +53,7 @@ To get a local copy up and running, follow these simple steps.
 
 ### Prerequisites
 
-Before using `create-local-app`, ensure you have the required versions of these tools. Click on the badges in the [Built With](#built-with) section below for installation instructions.
+Before using `create-local-app`, ensure you have the required versions of these tools. Click on the badges in the [Built With](#built-with) section for installation instructions.
 
 **Required versions:**
 
