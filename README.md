@@ -74,11 +74,11 @@ wails version
    git clone https://github.com/TrueBlocks/create-local-app.git
    cd create-local-app
    
-   # Build the Go binary
+   # Build the Go binary (templates are embedded)
    go build -o bin/create-local-app main.go
    ```
 
-2. **Install to your PATH** (required)
+2. **Install to your PATH** (recommended)
 
    ```sh
    # Copy to a system location
@@ -88,9 +88,28 @@ wails version
    export PATH="$PATH:$(pwd)/bin"
    ```
 
-   > **⚠️ Important:** If you rebuild the binary after installing it to your PATH, you must also re-install it. The old version will continue to run until you copy the new binary over the old one.
+   > **✅ Self-Contained:** The binary now contains embedded templates and is completely self-contained. Configuration and templates are automatically managed in `~/.create-local-app/` on first run.
 
-3. **For contributors only** (optional development tooling)
+3. **Configuration Directory Structure**
+
+   On first run, the application automatically creates and populates:
+
+   ```
+   ~/.create-local-app/
+   ├── config.json                 # Your saved preferences
+   └── templates/
+       ├── system/                 # Built-in templates (extracted from binary)
+       │   └── default/            # Default Wails project template
+       └── contributed/            # Your custom templates
+           └── my-template/        # Created with --reverse mode
+   ```
+
+   - **Embedded Templates**: System templates are embedded in the binary as compressed archives
+   - **Automatic Extraction**: Templates are extracted to home directory on first run
+   - **Contributed Templates**: Your custom templates, preserved across updates
+   - **Configuration**: Stores your organization, project defaults, etc.
+
+4. **For contributors only** (optional development tooling)
 
    ```sh
    # Install linting tools (requires Node.js/Yarn)

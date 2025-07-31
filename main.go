@@ -1,295 +1,43 @@
 package main
 
 import (
-	"archive/tar"
 	"bufio"
-	"compress/gzip"
-	_ "embed"
-	"encoding/json"
+	"embed"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
+
+	"github.com/TrueBlocks/create-local-app/pkg/config"
+	"github.com/TrueBlocks/create-local-app/pkg/processor"
+	"github.com/TrueBlocks/create-local-app/pkg/templates"
 )
 
-//go:embed templates/templates.tar.gz
-var templatesData []byte
-
-// extractTemplates extracts the embedded templates.tar.gz to a temporary directory
-func extractTemplates() (string, error) {
-	// Create a temporary directory
-	tempDir, err := os.MkdirTemp("", "create-local-app-templates-*")
-	if err != nil {
-		return "", fmt.Errorf("failed to create temp directory: %w", err)
-	}
-
-	// Create gzip reader
-	gzipReader, err := gzip.NewReader(strings.NewReader(string(templatesData)))
-	if err != nil {
-		os.RemoveAll(tempDir)
-		return "", fmt.Errorf("failed to create gzip reader: %w", err)
-	}
-	defer gzipReader.Close()
-
-	// Create tar reader
-	tarReader := tar.NewReader(gzipReader)
-
-	// Extract files
-	for {
-		header, err := tarReader.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			os.RemoveAll(tempDir)
-			return "", fmt.Errorf("failed to read tar header: %w", err)
-		}
-
-		targetPath := filepath.Join(tempDir, header.Name)
-
-		switch header.Typeflag {
-		case tar.TypeDir:
-			if err := os.MkdirAll(targetPath, os.FileMode(header.Mode)); err != nil {
-				os.RemoveAll(tempDir)
-				return "", fmt.Errorf("failed to create directory %s: %w", targetPath, err)
-			}
-		case tar.TypeReg:
-			// Ensure the directory exists
-			if err := os.MkdirAll(filepath.Dir(targetPath), 0o755); err != nil {
-				os.RemoveAll(tempDir)
-				return "", fmt.Errorf("failed to create parent directory for %s: %w", targetPath, err)
-			}
-
-			file, err := os.OpenFile(targetPath, os.O_CREATE|os.O_WRONLY, os.FileMode(header.Mode))
-			if err != nil {
-				os.RemoveAll(tempDir)
-				return "", fmt.Errorf("failed to create file %s: %w", targetPath, err)
-			}
-
-			if _, err := io.Copy(file, tarReader); err != nil {
-				file.Close()
-				os.RemoveAll(tempDir)
-				return "", fmt.Errorf("failed to write file %s: %w", targetPath, err)
-			}
-			file.Close()
-		}
-	}
-
-	return tempDir, nil
-}
-
-func createTemplate(templateName string) error {
-	// Special case for "replace" - creates main template
-	if templateName == "replace" {
-		return createMainTemplate()
-	}
-
-	// Get current directory
-	currentDir, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("failed to get current directory: %v", err)
-	}
-
-	// Create templates directory if it doesn't exist
-	templatesDir := filepath.Join(currentDir, "templates")
-	if err := os.MkdirAll(templatesDir, 0755); err != nil {
-		return fmt.Errorf("failed to create templates directory: %v", err)
-	}
-
-	// Create template subdirectory
-	templateDir := filepath.Join(templatesDir, templateName)
-	if err := os.MkdirAll(templateDir, 0755); err != nil {
-		return fmt.Errorf("failed to create template directory: %v", err)
-	}
-
-	// Copy current directory contents to template directory
-	err = copyDirectory(currentDir, templateDir)
-	if err != nil {
-		return fmt.Errorf("failed to copy directory contents: %v", err)
-	}
-
-	// Create tar.gz file
-	tarPath := filepath.Join(templatesDir, templateName+".tar.gz")
-	if _, err := os.Stat(tarPath); err == nil {
-		fmt.Printf("Warning: Template %s.tar.gz already exists and will be overwritten.\n", templateName)
-	}
-
-	err = createTarGz(templateDir, tarPath)
-	if err != nil {
-		// Clean up template directory on failure
-		os.RemoveAll(templateDir)
-		return fmt.Errorf("failed to create tar.gz: %v", err)
-	}
-
-	// Clean up template directory
-	err = os.RemoveAll(templateDir)
-	if err != nil {
-		fmt.Printf("Warning: Failed to clean up temporary directory %s: %v\n", templateDir, err)
-	}
-
-	fmt.Printf("Successfully created template: %s\n", tarPath)
-	return nil
-}
-
-func createMainTemplate() error {
-	currentDir, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("failed to get current directory: %v", err)
-	}
-
-	// Create templates.tar.gz directly in current directory
-	tarPath := filepath.Join(currentDir, "templates.tar.gz")
-	if _, err := os.Stat(tarPath); err == nil {
-		fmt.Println("Warning: templates.tar.gz already exists and will be overwritten.")
-	}
-
-	err = createTarGz(currentDir, tarPath)
-	if err != nil {
-		return fmt.Errorf("failed to create templates.tar.gz: %v", err)
-	}
-
-	fmt.Printf("Successfully created main template: %s\n", tarPath)
-	return nil
-}
-
-func copyDirectory(src, dst string) error {
-	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// Skip the destination directory itself to avoid infinite recursion
-		if strings.HasPrefix(path, dst) {
-			return filepath.SkipDir
-		}
-
-		// Skip excluded files and directories
-		excluded, skipErr := isExcluded(path, info)
-		if excluded {
-			if skipErr == filepath.SkipDir && info.IsDir() {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-
-		// Calculate relative path
-		relPath, err := filepath.Rel(src, path)
-		if err != nil {
-			return err
-		}
-
-		// Create destination path
-		dstPath := filepath.Join(dst, relPath)
-
-		if info.IsDir() {
-			return os.MkdirAll(dstPath, info.Mode())
-		}
-
-		// Copy file
-		return copyFile(path, dstPath)
-	})
-}
-
-func copyFile(src, dst string) error {
-	sourceFile, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer sourceFile.Close()
-
-	// Create destination directory if it doesn't exist
-	dstDir := filepath.Dir(dst)
-	if err := os.MkdirAll(dstDir, 0755); err != nil {
-		return err
-	}
-
-	destFile, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer destFile.Close()
-
-	_, err = io.Copy(destFile, sourceFile)
-	return err
-}
-
-func createTarGz(sourceDir, targetPath string) error {
-	// Create the target file
-	file, err := os.Create(targetPath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	// Create gzip writer
-	gzipWriter := gzip.NewWriter(file)
-	defer gzipWriter.Close()
-
-	// Create tar writer
-	tarWriter := tar.NewWriter(gzipWriter)
-	defer tarWriter.Close()
-
-	// Walk through the source directory
-	return filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// Skip excluded files and directories
-		excluded, skipErr := isExcluded(path, info)
-		if excluded {
-			if skipErr == filepath.SkipDir && info.IsDir() {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-
-		// Create tar header
-		header, err := tar.FileInfoHeader(info, "")
-		if err != nil {
-			return err
-		}
-
-		// Update the name to be relative to source directory
-		relPath, err := filepath.Rel(sourceDir, path)
-		if err != nil {
-			return err
-		}
-		header.Name = relPath
-
-		// Write header
-		if err := tarWriter.WriteHeader(header); err != nil {
-			return err
-		}
-
-		// If it's a regular file, write its content
-		if info.Mode().IsRegular() {
-			file, err := os.Open(path)
-			if err != nil {
-				return err
-			}
-			defer file.Close()
-
-			_, err = io.Copy(tarWriter, file)
-			return err
-		}
-
-		return nil
-	})
-}
+//go:embed templates/system/*.tar.gz
+var systemTemplatesFS embed.FS
 
 func main() {
-	autoMode, reverseMode, templateName, err := parseArgs()
+	args, err := config.ParseArgs()
 	if err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)
 	}
 
-	if reverseMode {
-		err := createTemplate(templateName)
+	// Initialize user configuration directory structure
+	if err := config.InitializeUserConfig(); err != nil {
+		fmt.Printf("Error initializing user config: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Initialize system templates on first run or if missing
+	if err := templates.InitializeSystemTemplates(systemTemplatesFS); err != nil {
+		fmt.Printf("Error initializing system templates: %v\n", err)
+		os.Exit(1)
+	}
+
+	if args.IsReverse {
+		err := templates.CreateTemplate(args.TemplateName)
 		if err != nil {
 			fmt.Printf("Error creating template: %v\n", err)
 			os.Exit(1)
@@ -303,13 +51,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	if !reverseMode {
+	if !args.IsReverse {
 		dirEntries, err := os.ReadDir(projectDir)
 		if err != nil {
 			fmt.Println("Failed to read project directory:", err)
 			os.Exit(1)
 		}
-		if len(dirEntries) > 0 && !autoMode {
+		if len(dirEntries) > 0 && !args.IsAuto {
 			fmt.Println("The current directory (" + projectDir + ") contains files.")
 			fmt.Println("Proceeding will overwrite existing files in an unrecoverable way.")
 			fmt.Print("Are you sure you want to proceed? (Y/n): ")
@@ -330,78 +78,65 @@ func main() {
 		}
 	}
 
-	exePath, err := os.Executable()
-	execDir := filepath.Dir(exePath)
+	configPath, err := config.GetConfigPath()
 	if err != nil {
-		fmt.Println("Failed to get executable path:", err)
+		fmt.Println("Failed to get config path:", err)
 		os.Exit(1)
 	}
-	configPath := filepath.Join(execDir, ".wails-template.json")
 	fmt.Println("CONFIG_PATH=", configPath)
 
-	defaultOrg := ""
-	defaultProject := ""
-	defaultGithub := ""
-	defaultDomain := ""
-	if _, err := os.Stat(configPath); err == nil {
-		data, err := os.ReadFile(configPath)
-		if err == nil {
-			var config map[string]string
-			if json.Unmarshal(data, &config) == nil {
-				defaultOrg = config["Organization"]
-				defaultProject = config["ProjectName"]
-				defaultGithub = config["Github"]
-				defaultDomain = config["Domain"]
-			}
-		}
+	appConfig, err := config.LoadConfig(configPath)
+	if err != nil {
+		fmt.Println("Failed to load config:", err)
+		os.Exit(1)
 	}
 
-	if autoMode {
-		if defaultOrg == "" || defaultProject == "" || defaultGithub == "" || defaultDomain == "" {
+	if args.IsAuto {
+		if appConfig.Organization == "" || appConfig.ProjectName == "" || appConfig.Github == "" || appConfig.Domain == "" {
 			fmt.Println("Error: Auto mode requires default values in config file.")
 			fmt.Println("Run without --auto first to create config file with defaults.")
 			os.Exit(1)
 		}
 	}
 
-	organization := defaultOrg
-	projectName := defaultProject
-	github := defaultGithub
-	domain := defaultDomain
+	organization := appConfig.Organization
+	projectName := appConfig.ProjectName
+	github := appConfig.Github
+	domain := appConfig.Domain
 	chifra := "github.com/TrueBlocks/trueblocks-core/src/apps/chifra"
 
-	if !reverseMode && !autoMode {
+	if !args.IsReverse && !args.IsAuto {
 		reader := bufio.NewReader(os.Stdin)
 
-		fmt.Printf("Organization [%s]: ", defaultOrg)
+		fmt.Printf("Organization [%s]: ", appConfig.Organization)
 		organizationInput, _ := reader.ReadString('\n')
 		organizationInput = strings.TrimSpace(organizationInput)
 		if organizationInput != "" {
 			organization = organizationInput
 		}
 
-		fmt.Printf("Project Name [%s]: ", defaultProject)
+		fmt.Printf("Project Name [%s]: ", appConfig.ProjectName)
 		projectNameInput, _ := reader.ReadString('\n')
 		projectNameInput = strings.TrimSpace(projectNameInput)
 		if projectNameInput != "" {
 			projectName = projectNameInput
 		}
 
-		fmt.Printf("Github [%s]: ", defaultGithub)
+		fmt.Printf("Github [%s]: ", appConfig.Github)
 		githubInput, _ := reader.ReadString('\n')
 		githubInput = strings.TrimSpace(githubInput)
 		if githubInput != "" {
 			github = githubInput
 		}
 
-		fmt.Printf("Domain [%s]: ", defaultDomain)
+		fmt.Printf("Domain [%s]: ", appConfig.Domain)
 		domainInput, _ := reader.ReadString('\n')
 		domainInput = strings.TrimSpace(domainInput)
 		if domainInput != "" {
 			domain = domainInput
 		}
 	} else {
-		if reverseMode {
+		if args.IsReverse {
 			fmt.Println("Running in reverse mode with default values:")
 		} else {
 			fmt.Println("Running in auto mode with default values:")
@@ -412,6 +147,24 @@ func main() {
 		fmt.Println("Domain:", domain)
 	}
 
+	// Validate required fields
+	if organization == "" {
+		fmt.Println("Error: Organization is required.")
+		os.Exit(1)
+	}
+	if projectName == "" {
+		fmt.Println("Error: Project Name is required.")
+		os.Exit(1)
+	}
+	if github == "" {
+		fmt.Println("Error: Github is required.")
+		os.Exit(1)
+	}
+	if domain == "" {
+		fmt.Println("Error: Domain is required.")
+		os.Exit(1)
+	}
+
 	publisherName := "YourCompany"
 	publisherEmail := "your_email@your_company.com"
 
@@ -419,26 +172,20 @@ func main() {
 	orgName := strings.TrimSpace(parts[0])
 	slug := strings.ToLower(orgName) + "-" + projectName
 
-	if !reverseMode && !autoMode {
-		config := map[string]string{
-			"Organization": organization,
-			"ProjectName":  projectName,
-			"Github":       github,
-			"Domain":       domain,
+	if !args.IsReverse && !args.IsAuto {
+		newConfig := &config.Config{
+			Organization: organization,
+			ProjectName:  projectName,
+			Github:       github,
+			Domain:       domain,
 		}
-		configData, err := json.MarshalIndent(config, "", "  ")
-		if err != nil {
-			fmt.Println("Failed to marshal config to JSON:", err)
-			os.Exit(1)
-		}
-		err = os.WriteFile(configPath, configData, 0644)
-		if err != nil {
-			fmt.Println("Failed to write config file:", err)
+		if err := config.SaveConfig(configPath, newConfig); err != nil {
+			fmt.Println("Failed to save config file:", err)
 			os.Exit(1)
 		}
 	}
 
-	// Extract embedded templates to temporary directory
+	// Get template directory
 	var templateDir string
 	customTemplateDir := os.Getenv("TEMPLATE_SOURCE")
 	if customTemplateDir != "" {
@@ -450,15 +197,13 @@ func main() {
 		}
 		fmt.Println("Using custom template directory:", templateDir)
 	} else {
-		// Extract embedded templates
-		templateDir, err = extractTemplates()
+		// Use default system template
+		templateDir, err = templates.GetDefaultTemplateDir()
 		if err != nil {
-			fmt.Println("Failed to extract embedded templates:", err)
+			fmt.Println("Failed to get default template directory:", err)
 			os.Exit(1)
 		}
-		// Clean up temporary directory when done
-		defer os.RemoveAll(templateDir)
-		fmt.Println("Using embedded templates (extracted to temp dir)")
+		fmt.Println("Using default template directory:", templateDir)
 	}
 
 	fmt.Println("TEMPLATE_DIR: ", templateDir)
@@ -471,7 +216,27 @@ func main() {
 	fmt.Println("DOMAIN:       ", domain)
 	fmt.Println("CHIFRA:       ", chifra)
 
-	if !reverseMode {
+	// Create template variables with safety checks for empty strings
+	projectProper := projectName
+	if len(projectName) > 0 {
+		projectProper = strings.ToUpper(projectName[0:1]) + projectName[1:]
+	}
+
+	templateVars := &processor.TemplateVars{
+		ProjectName:    projectName,
+		ProjectProper:  projectProper,
+		PublisherName:  publisherName,
+		PublisherEmail: publisherEmail,
+		Organization:   organization,
+		OrgName:        orgName,
+		OrgLower:       strings.ToLower(orgName),
+		Slug:           slug,
+		Github:         github,
+		Domain:         domain,
+		Chifra:         chifra,
+	}
+
+	if !args.IsReverse {
 		err = filepath.Walk(templateDir, func(path string, info fs.FileInfo, err error) error {
 			if err != nil {
 				return err
@@ -489,19 +254,7 @@ func main() {
 				return err
 			}
 
-			content := string(input)
-			content = strings.ReplaceAll(content, "{{PROJECT_NAME}}", projectName)
-			content = strings.ReplaceAll(content, "{{PROJECT_PROPER}}", strings.ToUpper(projectName[0:1])+projectName[1:])
-			content = strings.ReplaceAll(content, "{{PUBLISHER_NAME}}", publisherName)
-			content = strings.ReplaceAll(content, "{{PUBLISHER_EMAIL}}", publisherEmail)
-			content = strings.ReplaceAll(content, "{{ORGANIZATION}}", organization)
-			content = strings.ReplaceAll(content, "{{ORG_NAME}}", orgName)
-			content = strings.ReplaceAll(content, "{{ORG_LOWER}}", strings.ToLower(orgName))
-			content = strings.ReplaceAll(content, "{{SLUG}}", slug)
-			content = strings.ReplaceAll(content, "{{GITHUB}}", github)
-			content = strings.ReplaceAll(content, "{{DOMAIN}}", domain)
-			content = strings.ReplaceAll(content, "{{CHIFRA}}", chifra)
-
+			content := processor.ApplyTemplateVars(string(input), templateVars)
 			return os.WriteFile(targetPath, []byte(content), info.Mode())
 		})
 	} else {
@@ -513,7 +266,7 @@ func main() {
 				return err
 			}
 
-			if yes, err := isExcluded(path, info); yes {
+			if yes, err := processor.IsExcluded(path, info); yes {
 				// fmt.Printf("Skipping directory or file: %s\n", path)
 				return err
 			}
@@ -559,7 +312,7 @@ func main() {
 				return err
 			}
 
-			if yes, err := isExcluded(path, info); yes {
+			if yes, err := processor.IsExcluded(path, info); yes {
 				return err
 			}
 
@@ -588,30 +341,7 @@ func main() {
 				return nil
 			}
 
-			content := string(input)
-
-			content = strings.ReplaceAll(content, chifra, "{{CHIFRA}}")
-			if domain != "" {
-				content = strings.ReplaceAll(content, domain, "{{DOMAIN}}")
-			}
-			if github != "" {
-				content = strings.ReplaceAll(content, github, "{{GITHUB}}")
-			}
-			if slug != "" {
-				content = strings.ReplaceAll(content, slug, "{{SLUG}}")
-			}
-			if orgName != "" {
-				content = strings.ReplaceAll(content, orgName, "{{ORG_NAME}}")
-				content = strings.ReplaceAll(content, strings.ToLower(orgName), "{{ORG_LOWER}}")
-			}
-			if organization != "" {
-				content = strings.ReplaceAll(content, organization, "{{ORGANIZATION}}")
-			}
-			if projectName != "" {
-				content = strings.ReplaceAll(content, projectName, "{{PROJECT_NAME}}")
-				proper := strings.ToUpper(projectName[0:1]) + projectName[1:]
-				content = strings.ReplaceAll(content, proper, "{{PROJECT_PROPER}}")
-			}
+			content := processor.ReverseTemplateVars(string(input), templateVars)
 
 			if err := os.WriteFile(targetPath, []byte(content), info.Mode()); err != nil {
 				fmt.Printf("Error writing file %s: %v\n", targetPath, err)
@@ -626,7 +356,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if !reverseMode && !autoMode {
+	if !args.IsReverse && !args.IsAuto {
 		os.Remove(filepath.Join(projectDir, ".wails-template.json"))
 		fmt.Println("✅ Project created at", projectDir)
 		fmt.Println()
@@ -636,58 +366,4 @@ func main() {
 	} else {
 		fmt.Println("✅ Template updated from project at", projectDir)
 	}
-}
-
-func parseArgs() (isAuto bool, isReverse bool, templateName string, err error) {
-	if len(os.Args) > 1 {
-		switch os.Args[1] {
-		case "--reverse":
-			if len(os.Args) < 3 {
-				return false, false, "", fmt.Errorf("--reverse requires a template name parameter")
-			}
-			return false, true, os.Args[2], nil
-		case "--auto":
-			return true, false, "", nil
-		default:
-			return false, false, "", fmt.Errorf("unknown argument: %s (valid options: --reverse <template-name>, --auto)", os.Args[1])
-		}
-	}
-	return false, false, "", nil
-}
-
-// Update the isExcluded function to accept path and FileInfo
-func isExcluded(path string, info fs.FileInfo) (bool, error) {
-	_ = info // linter
-	baseName := filepath.Base(path)
-	folderName := filepath.Base(filepath.Dir(path))
-
-	if folderName == ".git" || folderName == "node_modules" || folderName == "dist" {
-		return true, filepath.SkipDir
-	}
-
-	if baseName == ".env" || baseName == ".DS_Store" || baseName == "shit" {
-		return true, nil
-	}
-
-	if strings.Contains(path, "/build") && baseName != "appicon.png" {
-		return true, nil
-	}
-
-	if strings.Contains(path, "/ai") {
-		keep := []string{"README.md", "RulesOfEngagement.md", ".gitignore", "ToDoList.md"}
-		if slices.Contains(keep, baseName) {
-			return false, nil
-		}
-		return baseName != "ai", nil
-	}
-
-	if strings.Contains(path, "/output") {
-		return baseName != ".gitignore", nil
-	}
-
-	if strings.Contains(path, "/book/book") && baseName != "book.toml" {
-		return true, nil
-	}
-
-	return false, nil
 }
