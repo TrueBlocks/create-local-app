@@ -91,7 +91,7 @@ wails version
    # Copy to a system location
    sudo cp bin/create-local-app /usr/local/bin/
    
-   # OR add the bin directory to your PATH
+   # OR (temporarily) add the bin directory to your PATH
    export PATH="$PATH:$(pwd)/bin"
    ```
 
