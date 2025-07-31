@@ -101,13 +101,16 @@ Before using Create Local App, ensure you have the following installed:
    ```sh
    git clone https://github.com/TrueBlocks/create-local-app.git
    cd create-local-app
-   go build -o create-local-app main.go
+   go build -o bin/create-local-app main.go
    ```
 
-2. **Move to your PATH** (optional)
+2. **Add to your PATH** (optional)
 
    ```sh
-   sudo mv create-local-app /usr/local/bin/
+   # Add the bin directory to your PATH, or copy the binary to a PATH location
+   export PATH="$PATH:$(pwd)/bin"
+   # OR copy to a system location
+   sudo cp bin/create-local-app /usr/local/bin/
    ```
 
 3. **Set up template directory** (optional)
@@ -126,7 +129,7 @@ Create Local App supports three main operation modes, each designed for differen
 The default mode provides a guided setup experience:
 
 ```sh
-./create-local-app
+bin/create-local-app
 ```
 
 You'll be prompted for:
@@ -141,7 +144,7 @@ You'll be prompted for:
 Skip prompts and use previously saved configuration:
 
 ```sh
-./create-local-app --auto
+bin/create-local-app --auto
 ```
 
 *Note: Requires running interactive mode first to create the configuration file.*
@@ -151,7 +154,9 @@ Skip prompts and use previously saved configuration:
 ```sh
 # 1. Create a new project interactively
 mkdir my-new-app && cd my-new-app
-create-local-app
+/path/to/create-local-app/bin/create-local-app
+# OR if it's in your PATH:
+# create-local-app
 
 # 2. Set up the project
 cd frontend && yarn install && cd ..
@@ -233,7 +238,7 @@ cd create-local-app
 go run main.go
 
 # Build for production
-go build -o create-local-app main.go
+go build -o bin/create-local-app main.go
 ```
 
 ## License

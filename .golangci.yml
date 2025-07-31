@@ -1,0 +1,179 @@
+# Golangci-lint configuration file
+# This configuration provides reasonable defaults for Go linting
+
+run:
+  timeout: 10m
+  issues-exit-code: 1
+  tests: true
+
+output:
+  formats:
+    - format: colored-line-number
+      path: stdout
+  print-issued-lines: true
+  print-linter-name: true
+  sort-results: true
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+  
+  goconst:
+    min-len: 2
+    min-occurrences: 3
+  
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+  
+  gofmt:
+    simplify: true
+  
+  goimports:
+    local-prefixes: github.com/TrueBlocks/create-local-app
+  
+  golint:
+    min-confidence: 0
+  
+  gomnd:
+    settings:
+      mnd:
+        # List of enabled checks, see https://github.com/tommy-muehle/go-mnd/#checks for description.
+        checks:
+          - argument
+          - case
+          - condition
+          - operation
+          - return
+  
+  govet:
+    enable-all: true
+    settings:
+      shadow:
+        strict: false
+  
+  lll:
+    line-length: 140
+  
+  maligned:
+    suggest-new: true
+  
+  misspell:
+    locale: US
+  
+  nolintlint:
+    allow-leading-space: true
+    allow-unused: false
+    require-explanation: false
+    require-specific: false
+
+linters:
+  disable-all: true
+  enable:
+    - bodyclose
+    - unused
+    - depguard
+    - dogsled
+    - dupl
+    - errcheck
+    - copyloopvar
+    - exhaustive
+    - gochecknoinits
+    - goconst
+    - gocritic
+    - gocyclo
+    - gofmt
+    - goimports
+    - mnd
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - lll
+    - misspell
+    - nakedret
+    - noctx
+    - nolintlint
+    - rowserrcheck
+    - staticcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
+
+issues:
+  # Excluding configuration per-path, per-linter, per-text and per-source
+  exclude-dirs:
+    - bin
+    - templates
+    - frontend
+    - output
+    - build
+  exclude-files:
+    - ".*\\.pb\\.go$"
+    - ".*\\.gen\\.go$"
+  uniq-by-line: true
+  
+  exclude-rules:
+    # Exclude some linters from running on tests files
+    - path: _test\.go
+      linters:
+        - mnd
+        - lll
+        - dupl
+    
+    # Exclude typecheck errors for embed directives when files don't exist yet
+    - linters:
+        - typecheck
+      text: "pattern.*no matching files found"
+    
+    # Exclude some staticcheck messages
+    - linters:
+        - staticcheck
+      text: "SA9003:"
+    
+    # Exclude lll issues for long lines with URLs
+    - linters:
+        - lll
+      source: "^//.*http"
+    
+    # Exclude gosec issues for tar extraction (expected behavior for templates)
+    - linters:
+        - gosec
+      text: "G305: File traversal when extracting zip/tar archive"
+    
+    # Exclude gosec decompression bomb warning for template extraction
+    - linters:
+        - gosec
+      text: "G110: Potential DoS vulnerability via decompression bomb"
+    
+    # Exclude integer overflow conversion warnings for file modes
+    - linters:
+        - gosec
+      text: "G115: integer overflow conversion int64 -> uint32"
+    
+    # Exclude magic number warnings for common file permissions
+    - linters:
+        - mnd
+      text: "Magic number: 0o755"
+
+  # Show only new issues created after git revision `HEAD~1`
+  new-from-rev: HEAD~1
+  
+  # Maximum issues count per one linter. Set to 0 to disable. Default is 50.
+  max-issues-per-linter: 0
+  
+  # Maximum count of issues with the same text. Set to 0 to disable. Default is 3.
+  max-same-issues: 0
+
+severity:
+  default-severity: error
+  case-sensitive: false

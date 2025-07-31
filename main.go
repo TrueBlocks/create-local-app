@@ -15,7 +15,7 @@ import (
 	"strings"
 )
 
-//go:embed templates.tar.gz
+//go:embed templates/templates.tar.gz
 var templatesData []byte
 
 // extractTemplates extracts the embedded templates.tar.gz to a temporary directory
@@ -58,7 +58,7 @@ func extractTemplates() (string, error) {
 			}
 		case tar.TypeReg:
 			// Ensure the directory exists
-			if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
+			if err := os.MkdirAll(filepath.Dir(targetPath), 0o755); err != nil {
 				os.RemoveAll(tempDir)
 				return "", fmt.Errorf("failed to create parent directory for %s: %w", targetPath, err)
 			}
@@ -445,6 +445,7 @@ func parseArgs() (isAuto bool, isReverse bool, err error) {
 
 // Update the isExcluded function to accept path and FileInfo
 func isExcluded(path string, info fs.FileInfo) (bool, error) {
+	_ = info // linter
 	baseName := filepath.Base(path)
 	folderName := filepath.Base(filepath.Dir(path))
 
