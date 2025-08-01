@@ -20,7 +20,9 @@ type Config struct {
 type Args struct {
 	IsAuto       bool
 	IsCreate     bool
+	IsRemove     bool
 	IsForce      bool
+	IsList       bool
 	TemplateName string
 }
 
@@ -49,17 +51,49 @@ func ParseArgs(version string) (*Args, error) {
 				args.IsCreate = true
 				args.TemplateName = templateName
 				i += 2 // Skip the template name argument
+			case "--remove":
+				if i+1 >= len(os.Args) {
+					return nil, fmt.Errorf("--remove requires a template name parameter")
+				}
+				templateName := os.Args[i+1]
+				if !isValidTemplateName(templateName) {
+					return nil, fmt.Errorf("invalid template name '%s': must start with alphanumeric and contain only alphanumeric characters and dashes", templateName)
+				}
+				args.IsRemove = true
+				args.TemplateName = templateName
+				i += 2 // Skip the template name argument
 			case "--auto":
 				args.IsAuto = true
 				i++
 			case "--force":
 				args.IsForce = true
 				i++
+			case "--list":
+				args.IsList = true
+				i++
 			default:
-				return nil, fmt.Errorf("unknown argument: %s (valid options: --create <template-name>, --auto, --force, --version, --help)", os.Args[i])
+				return nil, fmt.Errorf("unknown argument: %s (valid options: --create <template-name>, --remove <template-name>, --auto, --force, --list, --version, --help)", os.Args[i])
 			}
 		}
 	}
+
+	// Validate incompatible flag combinations
+	if args.IsCreate && args.IsAuto {
+		return nil, fmt.Errorf("--create and --auto flags are incompatible (auto mode is for project creation, not template creation)")
+	}
+	if args.IsCreate && args.IsForce {
+		return nil, fmt.Errorf("--create and --force flags are incompatible (force mode is for project creation, not template creation)")
+	}
+	if args.IsRemove && args.IsAuto {
+		return nil, fmt.Errorf("--remove and --auto flags are incompatible (auto mode is for project creation, not template removal)")
+	}
+	if args.IsRemove && args.IsForce {
+		return nil, fmt.Errorf("--remove and --force flags are incompatible (force mode is for project creation, not template removal)")
+	}
+	if args.IsCreate && args.IsRemove {
+		return nil, fmt.Errorf("--create and --remove flags are incompatible (cannot create and remove template simultaneously)")
+	}
+
 	return args, nil
 }
 
@@ -72,7 +106,9 @@ func printHelp() {
 	fmt.Println()
 	fmt.Println("OPTIONS:")
 	fmt.Println("  --auto                           Use saved configuration without prompts")
-	fmt.Println("  --create <template-name> Create a template from the current directory")
+	fmt.Println("  --create <template-name>         Create a template from the current directory")
+	fmt.Println("  --remove <template-name>         Remove a contributed template")
+	fmt.Println("  --list                           List available templates")
 	fmt.Println("  --force                          Force operation without confirmation (overwrite existing files)")
 	fmt.Println("  --version                        Show version information")
 	fmt.Println("  --help                           Show this help message")
@@ -81,8 +117,9 @@ func printHelp() {
 	fmt.Println("  create-local-app                           # Interactive mode - prompts for project details")
 	fmt.Println("  create-local-app --auto                    # Use previously saved configuration")
 	fmt.Println("  create-local-app --force                   # Interactive mode - overwrite existing files without confirmation")
-	fmt.Println("  create-local-app --create my-app  # Create template from current directory")
-	fmt.Println("  create-local-app --create my-app --force  # Create template, overwrite if exists")
+	fmt.Println("  create-local-app --create my-app           # Create template from current directory")
+	fmt.Println("  create-local-app --remove my-app           # Remove contributed template")
+	fmt.Println("  create-local-app --list                    # List available templates")
 	fmt.Println()
 	fmt.Println("For more information, visit: https://github.com/TrueBlocks/create-local-app")
 }
@@ -176,4 +213,49 @@ func GetConfigPath() (string, error) {
 		return "", err
 	}
 	return filepath.Join(configDir, "config.json"), nil
+}
+
+// GetProjectConfigPath returns the path to the project-local configuration file
+func GetProjectConfigPath() string {
+	return "./.create-local-app.json"
+}
+
+// LoadProjectConfig loads configuration from project-local file, falling back to global config
+func LoadProjectConfig() (*Config, string, error) {
+	// First try project-local config
+	projectConfigPath := GetProjectConfigPath()
+	if _, err := os.Stat(projectConfigPath); err == nil {
+		config, err := LoadConfig(projectConfigPath)
+		if err != nil {
+			return nil, "", fmt.Errorf("failed to load project config: %w", err)
+		}
+		return config, projectConfigPath, nil
+	}
+
+	// Fall back to global config
+	globalConfigPath, err := GetConfigPath()
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to get global config path: %w", err)
+	}
+
+	config, err := LoadConfig(globalConfigPath)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to load global config: %w", err)
+	}
+
+	return config, globalConfigPath, nil
+}
+
+// SaveProjectConfig saves configuration to project-local file
+func SaveProjectConfig(config *Config) error {
+	return SaveConfig(GetProjectConfigPath(), config)
+}
+
+// SaveGlobalConfig saves configuration to global config file
+func SaveGlobalConfig(config *Config) error {
+	globalConfigPath, err := GetConfigPath()
+	if err != nil {
+		return fmt.Errorf("failed to get global config path: %w", err)
+	}
+	return SaveConfig(globalConfigPath, config)
 }

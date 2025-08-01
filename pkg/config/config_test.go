@@ -80,10 +80,16 @@ func TestParseArgs(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			name:     "create template and force combined",
-			args:     []string{"program", "--create", "my-template", "--force"},
-			wantArgs: &Args{IsAuto: false, IsCreate: true, IsForce: true, TemplateName: "my-template"},
-			wantErr:  false,
+			name:    "create template and force combined - incompatible",
+			args:    []string{"program", "--create", "my-template", "--force"},
+			wantErr: true,
+			errMsg:  "--create and --force flags are incompatible (force mode is for project creation, not template creation)",
+		},
+		{
+			name:    "create template and auto combined - incompatible",
+			args:    []string{"program", "--create", "my-template", "--auto"},
+			wantErr: true,
+			errMsg:  "--create and --auto flags are incompatible (auto mode is for project creation, not template creation)",
 		},
 	}
 

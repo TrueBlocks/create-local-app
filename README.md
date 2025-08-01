@@ -23,6 +23,7 @@
     - [Interactive Mode (First Run)](#interactive-mode-first-run)
     - [Auto Mode (Subsequent Runs)](#auto-mode-subsequent-runs)
     - [Force Mode](#force-mode)
+    - [Template Management](#template-management)
     - [Creating Your First TrueBlocks miniDapp](#creating-your-first-trueblocks-minidapp)
   - [Contributing](#contributing)
   - [License](#license)
@@ -121,6 +122,7 @@ When you first run `create-local-app`, it will interactively prompt you for proj
 - `--auto` - Use saved configuration without prompts
 - `--force` - Force operation without confirmation (overwrite existing files)
 - `--create <template-name>` - Create a template from the current directory
+- `--remove <template-name>` - Remove a contributed template with confirmation
 - `--version` - Show version information
 - `--help` - Show help message
 
@@ -162,6 +164,25 @@ create-local-app --auto --force
 ```
 
 > **⚠️ Warning:** The `--force` flag will overwrite existing files in an unrecoverable way. Make sure to commit your changes to version control before using this flag.
+
+### Template Management
+
+Create and manage custom templates:
+
+**Creating a Template:**
+```sh
+# From a customized project, create a template (saves project-local config)
+cd my-customized-project
+create-local-app --create my-custom-template
+```
+
+**Removing a Template:**
+```sh
+create-local-app --remove my-custom-template
+    # > Are you sure you want to remove template 'my-custom-template'? (y/N):
+```
+
+> **📝 Note:** Only contributed templates can be removed. System templates (like "default") are protected and cannot be removed.
 
 ### Creating Your First TrueBlocks miniDapp
 

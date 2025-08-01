@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/TrueBlocks/create-local-app/pkg/config"
-	"github.com/TrueBlocks/create-local-app/pkg/processor"
 )
 
 // GetTemplateDir returns the path to a template directory
@@ -53,13 +52,42 @@ func GetDefaultTemplateDir() (string, error) {
 }
 
 // InitializeSystemTemplates extracts embedded system templates to the user config directory
-func InitializeSystemTemplates(embeddedFS embed.FS) error {
+// It checks versions to determine if templates need to be updated
+func InitializeSystemTemplates(embeddedFS embed.FS, currentVersion string) error {
 	// Get user config directory for destination
 	configDir, err := config.GetUserConfigDir()
 	if err != nil {
 		return err
 	}
 	destTemplatesDir := filepath.Join(configDir, "templates", "system")
+	versionFilePath := filepath.Join(configDir, "VERSION")
+
+	// Check if system templates need updating by comparing versions
+	needsUpdate := true
+	if _, err := os.Stat(destTemplatesDir); err == nil {
+		// System templates directory exists, check if it has content
+		entries, err := os.ReadDir(destTemplatesDir)
+		if err == nil && len(entries) > 0 {
+			// Templates exist, check existing version
+			if existingVersionBytes, err := os.ReadFile(versionFilePath); err == nil {
+				existingVersion := strings.TrimSpace(string(existingVersionBytes))
+				if existingVersion == strings.TrimSpace(currentVersion) {
+					// Versions match, no update needed
+					needsUpdate = false
+				}
+			}
+		}
+	}
+
+	// Always write/update the VERSION file in config directory
+	if err := os.WriteFile(versionFilePath, []byte(currentVersion+"\n"), 0644); err != nil {
+		return fmt.Errorf("failed to write VERSION file: %w", err)
+	}
+
+	// Skip update if not needed
+	if !needsUpdate {
+		return nil
+	}
 
 	// Remove existing system templates to ensure clean extraction
 	if err := os.RemoveAll(destTemplatesDir); err != nil {
@@ -170,118 +198,57 @@ func extractRegularFile(tarReader *tar.Reader, destPath string, header *tar.Head
 	return nil
 }
 
-// CreateTemplate creates a template from the current directory in the contributed folder
-func CreateTemplate(templateName string) error {
-	// Set environment variable to prevent macOS resource fork files
-	originalCopyFile := os.Getenv("COPYFILE_DISABLE")
-	os.Setenv("COPYFILE_DISABLE", "1")
-	defer func() {
-		if originalCopyFile == "" {
-			os.Unsetenv("COPYFILE_DISABLE")
-		} else {
-			os.Setenv("COPYFILE_DISABLE", originalCopyFile)
-		}
-	}()
-
-	// Get current directory
-	currentDir, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("failed to get current directory: %v", err)
-	}
-
-	// Get user config directory
+// ListTemplates lists all available templates (system and contributed)
+func ListTemplates() error {
 	configDir, err := config.GetUserConfigDir()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get user config directory: %w", err)
 	}
 
-	// Create the contributed template directory
-	templateDir := filepath.Join(configDir, "templates", "contributed", templateName)
-	if err := os.MkdirAll(templateDir, 0755); err != nil {
-		return fmt.Errorf("failed to create template directory %s: %v (check permissions)", templateDir, err)
-	}
+	fmt.Println("Available Templates:")
+	fmt.Println()
 
-	// Check if template already exists
-	if _, err := os.Stat(templateDir); err == nil {
-		fmt.Printf("Warning: Template %s already exists and will be overwritten.\n", templateName)
-		// Remove existing template
-		if err := os.RemoveAll(templateDir); err != nil {
-			return fmt.Errorf("failed to remove existing template: %v", err)
+	// List system templates
+	systemDir := filepath.Join(configDir, "templates", "system")
+	if systemTemplates, err := listTemplatesInDir(systemDir); err == nil && len(systemTemplates) > 0 {
+		fmt.Println("System Templates:")
+		for _, template := range systemTemplates {
+			fmt.Printf("  %s\n", template)
 		}
-		// Recreate directory
-		if err := os.MkdirAll(templateDir, 0755); err != nil {
-			return fmt.Errorf("failed to recreate template directory: %v", err)
+		fmt.Println()
+	}
+
+	// List contributed templates
+	contributedDir := filepath.Join(configDir, "templates", "contributed")
+	if contributedTemplates, err := listTemplatesInDir(contributedDir); err == nil && len(contributedTemplates) > 0 {
+		fmt.Println("Contributed Templates:")
+		for _, template := range contributedTemplates {
+			fmt.Printf("  %s\n", template)
 		}
+		fmt.Println()
 	}
 
-	// Copy current directory contents to template directory
-	err = copyDirectory(currentDir, templateDir)
-	if err != nil {
-		return fmt.Errorf("failed to copy directory contents: %v", err)
-	}
-
-	fmt.Printf("Successfully created template: %s\n", templateDir)
 	return nil
 }
 
-// CopyFile copies a file from src to dst
-func CopyFile(src, dst string) error {
-	sourceFile, err := os.Open(src)
+// listTemplatesInDir lists templates in a specific directory
+func listTemplatesInDir(dir string) ([]string, error) {
+	var templates []string
+
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		return templates, nil
+	}
+
+	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return err
-	}
-	defer sourceFile.Close()
-
-	// Create destination directory if it doesn't exist
-	dstDir := filepath.Dir(dst)
-	if err := os.MkdirAll(dstDir, 0755); err != nil {
-		return err
+		return nil, fmt.Errorf("failed to read directory %s: %w", dir, err)
 	}
 
-	destFile, err := os.Create(dst)
-	if err != nil {
-		return err
+	for _, entry := range entries {
+		if entry.IsDir() {
+			templates = append(templates, entry.Name())
+		}
 	}
-	defer destFile.Close()
 
-	_, err = io.Copy(destFile, sourceFile)
-	return err
-}
-
-func copyDirectory(src, dst string) error {
-	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// Skip the destination directory itself to avoid infinite recursion
-		if strings.HasPrefix(path, dst) {
-			return filepath.SkipDir
-		}
-
-		// Skip excluded files and directories
-		excluded, skipErr := processor.IsExcluded(path, info)
-		if excluded {
-			if skipErr == filepath.SkipDir && info.IsDir() {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-
-		// Calculate relative path
-		relPath, err := filepath.Rel(src, path)
-		if err != nil {
-			return err
-		}
-
-		// Create destination path
-		dstPath := filepath.Join(dst, relPath)
-
-		if info.IsDir() {
-			return os.MkdirAll(dstPath, info.Mode())
-		}
-
-		// Copy file
-		return CopyFile(path, dstPath)
-	})
+	return templates, nil
 }

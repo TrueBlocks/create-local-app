@@ -13,35 +13,14 @@ This guide covers the internal workings of the scaffolding tool, including templ
 For contributors working on the `create-local-app` tool itself:
 
 ```sh
-# Clone the repository
 git clone https://github.com/TrueBlocks/create-local-app.git
 cd create-local-app
-
-# Install development dependencies
-yarn install
-
-# Available yarn scripts:
-yarn build       # Build the Go binary
-yarn lint        # Run Go and Markdown linters
-yarn clean       # Clean build artifacts
-yarn test        # Run Go tests
-
-# Run the application in development mode
-go run main.go
-
-# Build for production
 go build -o bin/create-local-app main.go
 ```
 
 ### Version Management
 
-The application version is stored in the `VERSION` file at the project root and is embedded into the binary at build time using Go's `//go:embed` directive. To update the version:
-
-1. Edit the `VERSION` file (contains only the version string, e.g., "0.2.0")
-2. Rebuild the binary - Go will automatically detect the change and rebuild
-3. The new version will be available via `--version` command
-
-**Note**: Changes to embedded files (like `VERSION`) trigger a rebuild, so you don't need to use `go clean` when updating the version.
+The application version is stored in the `VERSION` file and embedded at build time using `//go:embed`. Edit `VERSION` and rebuild to update.
 
 ## Creating Custom Templates
 
@@ -65,28 +44,14 @@ The `create-local-app` tool supports creating custom templates from existing pro
    ~/.create-local-app/templates/contributed/my-custom-template/
    ```
 
-### How Templates Are Processed
+### Template Processing
 
 When creating a template with `--create`, the tool:
 
-- **Excludes build artifacts**: Automatically skips `.git/`, `node_modules/`, `dist/`, and other generated files
-- **Create template variables**: Converts your actual values back to template variables (e.g., "my-awesome-project" becomes `{{PROJECT_NAME}}`)
-- **Preserves structure**: Maintains your directory structure and file permissions
-- **Stores contributed templates**: Places custom templates in the `contributed/` folder to distinguish them from system templates
-
-### Using Custom Templates (Future Feature)
-
-> **📝 Note**: This feature is planned but not yet implemented.
-
-In future versions, you'll be able to use your custom templates with:
-
-```sh
-# Use a custom template instead of the default
-create-local-app --template my-custom-template
-
-# Combine with other options
-create-local-app --template my-custom-template --auto --force
-```
+- **Excludes build artifacts**: Automatically skips `.git/`, `node_modules/`, `dist/`, etc.
+- **Converts to template variables**: Your values become `{{PROJECT_NAME}}`, `{{ORGANIZATION}}`, etc.
+- **Saves project-local config**: Creates `./.create-local-app.json` with project-specific values
+- **Preserves structure**: Maintains directory structure and file permissions
 
 ### Template Directory Structure
 
@@ -96,7 +61,6 @@ create-local-app --template my-custom-template --auto --force
 │   └── default/               # Default Wails project template
 └── contributed/               # Your custom templates
     ├── my-custom-template/    # Created with --create
-    ├── react-template/        # Another custom template
     └── minimal-template/      # Minimal project template
 ```
 
@@ -124,7 +88,7 @@ This ensures that when someone uses your template, these values will be replaced
 
 ## Template Variables
 
-The following variables are automatically replaced during project generation when the tool processes template files:
+The following variables are automatically replaced during project generation:
 
 | Variable | Description | Example |
 |----------|-------------|---------|
@@ -143,20 +107,16 @@ The following variables are automatically replaced during project generation whe
 ## Roadmap
 
 - [x] Interactive project creation
-- [x] Auto mode for rapid development
-- [x] Configurable template variables
-- [x] File exclusion system
+- [x] Auto mode for rapid development  
+- [x] Template management (--create/--remove)
+- [x] Hybrid config system (global + project-local)
 - [ ] Custom template support (possible)
 - [ ] Multiple template profiles (possible)
-- [ ] Plugin system (unlikely)
-
-See the [open issues](https://github.com/TrueBlocks/create-local-app/issues) for a full list of proposed features and known issues.
 
 ## Quality Assurance
 
 - Go code is linted with `golangci-lint`
 - Markdown files are linted with `markdownlint`
-- All contributions should pass linting checks
 - Run `yarn lint` before submitting pull requests
 
 <!-- MARKDOWN LINKS & IMAGES -->

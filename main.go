@@ -35,18 +35,55 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Initialize system templates on first run or if missing
-	if err := templates.InitializeSystemTemplates(systemTemplatesFS); err != nil {
+	// Initialize system templates on first run or if version changed
+	if err := templates.InitializeSystemTemplates(systemTemplatesFS, version); err != nil {
 		fmt.Printf("Error initializing system templates: %v\n", err)
 		os.Exit(1)
 	}
 
-	if args.IsCreate {
-		err := templates.CreateTemplate(args.TemplateName)
-		if err != nil {
-			fmt.Printf("Error creating template: %v\n", err)
+	// Handle list templates mode
+	if args.IsList {
+		if err := templates.ListTemplates(); err != nil {
+			fmt.Printf("Error listing templates: %v\n", err)
 			os.Exit(1)
 		}
+		return
+	}
+
+	// Handle remove template mode
+	if args.IsRemove {
+		configDir, err := config.GetUserConfigDir()
+		if err != nil {
+			fmt.Printf("Error getting user config directory: %v\n", err)
+			os.Exit(1)
+		}
+
+		templatePath := filepath.Join(configDir, "templates", "contributed", args.TemplateName)
+
+		// Check if template exists
+		if _, err := os.Stat(templatePath); os.IsNotExist(err) {
+			fmt.Printf("Error: Template '%s' not found in contributed templates.\n", args.TemplateName)
+			os.Exit(1)
+		}
+
+		// Ask for confirmation
+		fmt.Printf("Are you sure you want to remove template '%s'? This action cannot be undone. (y/N): ", args.TemplateName)
+		reader := bufio.NewReader(os.Stdin)
+		response, _ := reader.ReadString('\n')
+		response = strings.TrimSpace(strings.ToLower(response))
+
+		if response != "y" && response != "yes" {
+			fmt.Println("Template removal cancelled.")
+			os.Exit(0)
+		}
+
+		// Remove the template directory
+		if err := os.RemoveAll(templatePath); err != nil {
+			fmt.Printf("Error removing template: %v\n", err)
+			os.Exit(1)
+		}
+
+		fmt.Printf("✅ Template '%s' successfully removed from contributed templates.\n", args.TemplateName)
 		return
 	}
 
@@ -56,7 +93,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if !args.IsCreate {
+	if !args.IsCreate && !args.IsRemove {
 		dirEntries, err := os.ReadDir(projectDir)
 		if err != nil {
 			fmt.Println("Failed to read project directory:", err)
@@ -81,17 +118,35 @@ func main() {
 		}
 	}
 
-	configPath, err := config.GetConfigPath()
+	appConfig, configPath, err := config.LoadProjectConfig()
 	if err != nil {
-		fmt.Println("Failed to get config path:", err)
+		fmt.Println("Failed to load config:", err)
 		os.Exit(1)
 	}
 	fmt.Println("CONFIG_PATH=", configPath)
 
-	appConfig, err := config.LoadConfig(configPath)
-	if err != nil {
-		fmt.Println("Failed to load config:", err)
-		os.Exit(1)
+	// Developer mode: Special case for jrush's development environment
+	developerMode := false
+	if strings.Contains(configPath, "jrush") {
+		// Check if config file is missing or has empty values
+		configMissing := false
+		if _, err := os.Stat(configPath); os.IsNotExist(err) {
+			configMissing = true
+		} else if appConfig.Organization == "" || appConfig.ProjectName == "" || appConfig.Github == "" || appConfig.Domain == "" {
+			configMissing = true
+		}
+
+		if configMissing {
+			// Set TrueBlocks defaults
+			appConfig.Organization = "TrueBlocks, LLC"
+			appConfig.ProjectName = "dalledress"
+			appConfig.Github = "github.com/TrueBlocks/trueblocks-core"
+			appConfig.Domain = "trueblocks.io"
+			// Remove auto mode to allow interactive confirmation of defaults
+			args.IsAuto = false
+			developerMode = true
+			// fmt.Println("Developer mode detected - using TrueBlocks defaults")
+		}
 	}
 
 	if args.IsAuto {
@@ -108,7 +163,12 @@ func main() {
 	domain := appConfig.Domain
 	chifra := "github.com/TrueBlocks/trueblocks-core/src/apps/chifra"
 
-	if !args.IsCreate && !args.IsAuto {
+	// Interactive prompting for missing values (regular mode or --create mode or developer mode)
+	// For --create mode, always prompt to allow project-specific configuration
+	shouldPrompt := (!args.IsRemove && !args.IsAuto) &&
+		((!args.IsCreate) || args.IsCreate || developerMode)
+
+	if shouldPrompt {
 		reader := bufio.NewReader(os.Stdin)
 
 		fmt.Printf("Organization [%s]: ", appConfig.Organization)
@@ -175,38 +235,66 @@ func main() {
 	orgName := strings.TrimSpace(parts[0])
 	slug := strings.ToLower(orgName) + "-" + projectName
 
-	if !args.IsCreate && !args.IsAuto {
+	// Save config if we prompted for values (regular mode or --create mode with prompting)
+	if shouldPrompt {
 		newConfig := &config.Config{
 			Organization: organization,
 			ProjectName:  projectName,
 			Github:       github,
 			Domain:       domain,
 		}
-		if err := config.SaveConfig(configPath, newConfig); err != nil {
-			fmt.Println("Failed to save config file:", err)
-			os.Exit(1)
+
+		if args.IsCreate {
+			// In create mode, save to project-local config
+			if err := config.SaveProjectConfig(newConfig); err != nil {
+				fmt.Println("Failed to save project config file:", err)
+				os.Exit(1)
+			}
+		} else {
+			// In regular mode, save to project-local config to establish project-specific settings
+			// This ensures each project gets its own config file
+			if err := config.SaveProjectConfig(newConfig); err != nil {
+				fmt.Println("Failed to save project config file:", err)
+				os.Exit(1)
+			}
+			// Also update global config for convenience as fallback defaults
+			if err := config.SaveGlobalConfig(newConfig); err != nil {
+				fmt.Println("Failed to save global config file:", err)
+				os.Exit(1)
+			}
 		}
 	}
 
 	// Get template directory
 	var templateDir string
-	customTemplateDir := os.Getenv("TEMPLATE_SOURCE")
-	if customTemplateDir != "" {
-		// Use custom template directory if specified
-		templateDir, err = filepath.Abs(customTemplateDir)
+	if args.IsCreate {
+		// In create mode, we write to the contributed template directory
+		configDir, err := config.GetUserConfigDir()
 		if err != nil {
-			fmt.Println("Failed to resolve custom template directory:", err)
+			fmt.Println("Failed to get user config directory:", err)
 			os.Exit(1)
 		}
-		fmt.Println("Using custom template directory:", templateDir)
+		templateDir = filepath.Join(configDir, "templates", "contributed", args.TemplateName)
+		fmt.Println("Creating template at:", templateDir)
 	} else {
-		// Use default system template
-		templateDir, err = templates.GetDefaultTemplateDir()
-		if err != nil {
-			fmt.Println("Failed to get default template directory:", err)
-			os.Exit(1)
+		customTemplateDir := os.Getenv("TEMPLATE_SOURCE")
+		if customTemplateDir != "" {
+			// Use custom template directory if specified
+			templateDir, err = filepath.Abs(customTemplateDir)
+			if err != nil {
+				fmt.Println("Failed to resolve custom template directory:", err)
+				os.Exit(1)
+			}
+			fmt.Println("Using custom template directory:", templateDir)
+		} else {
+			// Use default system template
+			templateDir, err = templates.GetDefaultTemplateDir()
+			if err != nil {
+				fmt.Println("Failed to get default template directory:", err)
+				os.Exit(1)
+			}
+			fmt.Println("Using default template directory:", templateDir)
 		}
-		fmt.Println("Using default template directory:", templateDir)
 	}
 
 	fmt.Println("TEMPLATE_DIR: ", templateDir)
@@ -239,7 +327,7 @@ func main() {
 		Chifra:         chifra,
 	}
 
-	if !args.IsCreate {
+	if !args.IsCreate && !args.IsRemove {
 		err = filepath.Walk(templateDir, func(path string, info fs.FileInfo, err error) error {
 			if err != nil {
 				return err
@@ -261,6 +349,17 @@ func main() {
 			return os.WriteFile(targetPath, []byte(content), info.Mode())
 		})
 	} else {
+		// Set environment variable to prevent macOS resource fork files
+		originalCopyFile := os.Getenv("COPYFILE_DISABLE")
+		os.Setenv("COPYFILE_DISABLE", "1")
+		defer func() {
+			if originalCopyFile == "" {
+				os.Unsetenv("COPYFILE_DISABLE")
+			} else {
+				os.Setenv("COPYFILE_DISABLE", originalCopyFile)
+			}
+		}()
+
 		fmt.Println("Create template mode: Updating template from current project")
 
 		filesToCopy := make(map[string]bool)
@@ -288,25 +387,29 @@ func main() {
 		}
 
 		fmt.Printf("Found %d files/directories in source\n", len(filesToCopy))
-		err = filepath.Walk(templateDir, func(path string, info fs.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
 
-			relPath, _ := filepath.Rel(templateDir, path)
-			if relPath == "" || relPath == "." || relPath == ".wails-template.json" {
+		// Only clean template directory if it already exists
+		if _, err := os.Stat(templateDir); err == nil {
+			err = filepath.Walk(templateDir, func(path string, info fs.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+
+				relPath, _ := filepath.Rel(templateDir, path)
+				if relPath == "" || relPath == "." || relPath == ".wails-template.json" {
+					return nil
+				}
+
+				if !filesToCopy[relPath] {
+					fmt.Printf("Removing file or folder from template: %s\n", relPath)
+					os.Remove(path)
+				}
 				return nil
+			})
+			if err != nil {
+				fmt.Println("Error cleaning template directory:", err)
+				os.Exit(1)
 			}
-
-			if !filesToCopy[relPath] {
-				fmt.Printf("Removing file or folder from template: %s\n", relPath)
-				os.Remove(path)
-			}
-			return nil
-		})
-		if err != nil {
-			fmt.Println("Error cleaning template directory:", err)
-			os.Exit(1)
 		}
 
 		fmt.Println("Copying files to template with replacements...")
@@ -359,7 +462,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if !args.IsCreate && !args.IsAuto {
+	if !args.IsCreate && !args.IsRemove && !args.IsAuto {
 		os.Remove(filepath.Join(projectDir, ".wails-template.json"))
 		fmt.Println("✅ Project created at", projectDir)
 		fmt.Println()
