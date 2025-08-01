@@ -17,7 +17,7 @@ func IsExcluded(path string, info fs.FileInfo) (bool, error) {
 		return true, filepath.SkipDir
 	}
 
-	if baseName == ".env" || baseName == ".DS_Store" || baseName == "shit" {
+	if baseName == ".env" || baseName == ".DS_Store" || baseName == "shit" || baseName == ".create-local-app.json" {
 		return true, nil
 	}
 
