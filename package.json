@@ -4,8 +4,8 @@
   "description": "A powerful Go-based scaffolding tool for TrueBlocks/Wails desktop applications",
   "main": "main.go",
   "scripts": {
-    "build": "go build -o bin/create-local-app main.go",
-    "deploy": "cp bin/create-local-app /usr/local/bin/ && echo '✅ Installed to /usr/local/bin/create-local-app' && which create-local-app && echo '✅ Installation verified'",
+    "build": "touch VERSION && go build -o bin/create-local-app main.go",
+    "deploy": "yarn build && cp bin/create-local-app /usr/local/bin/ && echo '✅ Installed to /usr/local/bin/create-local-app' && which create-local-app && echo '✅ Installation verified'",
     "lint": "golangci-lint run && markdownlint README.md .github/ISSUE_TEMPLATE/*.md",
     "clean": "rm -rf bin/",
     "test": "go test ./..."

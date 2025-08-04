@@ -27,7 +27,7 @@ type Args struct {
 }
 
 // ParseArgs parses command line arguments and returns Args struct or handles special commands
-func ParseArgs(version string) (*Args, error) {
+func ParseArgs(version, buildTime string) (*Args, error) {
 	args := &Args{}
 
 	if len(os.Args) > 1 {
@@ -36,6 +36,7 @@ func ParseArgs(version string) (*Args, error) {
 			switch os.Args[i] {
 			case "--version", "version":
 				fmt.Printf("create-local-app version %s\n", version)
+				fmt.Printf("built: %s\n", buildTime)
 				os.Exit(0)
 			case "--help", "help":
 				printHelp()

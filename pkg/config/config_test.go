@@ -102,7 +102,7 @@ func TestParseArgs(t *testing.T) {
 			// Set test arguments
 			os.Args = tt.args
 
-			args, err := ParseArgs("test-version")
+			args, err := ParseArgs("test-version", "now")
 
 			if tt.wantErr {
 				if err == nil {
@@ -342,7 +342,7 @@ func TestTemplateNameValidation(t *testing.T) {
 			defer func() { os.Args = originalArgs }()
 
 			os.Args = tt.args
-			_, err := ParseArgs("test-version")
+			_, err := ParseArgs("test-version", "now")
 
 			if tt.wantErr && err == nil {
 				t.Errorf("Expected error for template name validation but got none")

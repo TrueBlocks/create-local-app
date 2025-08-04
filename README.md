@@ -76,7 +76,7 @@ yarn --version    # v1.22.22 or higher
    cd create-local-app
    
    # Build the Go binary (templates are embedded)
-   go build -o bin/create-local-app main.go
+   touch VERSION && go build -o bin/create-local-app main.go
    ```
 
 2. **Install to your PATH** (recommended)

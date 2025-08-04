@@ -13,6 +13,7 @@ import (
 	"github.com/TrueBlocks/create-local-app/pkg/config"
 	"github.com/TrueBlocks/create-local-app/pkg/processor"
 	"github.com/TrueBlocks/create-local-app/pkg/templates"
+	"github.com/TrueBlocks/trueblocks-core/src/apps/chifra/pkg/file"
 )
 
 //go:embed templates/system/*.tar.gz
@@ -23,7 +24,8 @@ var versionContent string
 
 func main() {
 	version := strings.TrimSpace(versionContent)
-	args, err := config.ParseArgs(version)
+	built := file.MustGetLatestFileTime("VERSION")
+	args, err := config.ParseArgs(version, built.Format("2006-01-02 15:04:05"))
 	if err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)
