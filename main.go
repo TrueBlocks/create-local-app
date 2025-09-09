@@ -237,13 +237,34 @@ func main() {
 	orgName := strings.TrimSpace(parts[0])
 	slug := strings.ToLower(orgName) + "-" + projectName
 
-	// Save config if we prompted for values (regular mode or --create mode with prompting)
-	if shouldPrompt {
+	// Determine which template to use and resolve template name for saving in config
+	var resolvedTemplateName string
+	if !args.IsCreate {
+		// Check for --template flag first, then TEMPLATE_SOURCE environment variable, then saved config
+		if args.UseTemplate != "" {
+			resolvedTemplateName = args.UseTemplate
+		} else if templateSource := os.Getenv("TEMPLATE_SOURCE"); templateSource != "" {
+			// Only save template name if it resolves to a known template (not a full path)
+			if _, err := templates.GetTemplateDir(templateSource); err == nil {
+				resolvedTemplateName = templateSource
+			}
+		} else if appConfig.Template != "" {
+			// Use template from saved configuration
+			resolvedTemplateName = appConfig.Template
+		} else {
+			// Using default template
+			resolvedTemplateName = "default"
+		}
+	}
+
+	// Save config if we prompted for values or if template was explicitly specified
+	if shouldPrompt || resolvedTemplateName != "" {
 		newConfig := &config.Config{
 			Organization: organization,
 			ProjectName:  projectName,
 			Github:       github,
 			Domain:       domain,
+			Template:     resolvedTemplateName,
 		}
 
 		if args.IsCreate {
@@ -279,17 +300,25 @@ func main() {
 		templateDir = filepath.Join(configDir, "templates", "contributed", args.TemplateName)
 		fmt.Println("Creating template at:", templateDir)
 	} else {
-		customTemplateSource := os.Getenv("TEMPLATE_SOURCE")
-		if customTemplateSource != "" {
+		var templateSource string
+		if args.UseTemplate != "" {
+			templateSource = args.UseTemplate
+		} else if envTemplate := os.Getenv("TEMPLATE_SOURCE"); envTemplate != "" {
+			templateSource = envTemplate
+		} else if appConfig.Template != "" {
+			templateSource = appConfig.Template
+		}
+
+		if templateSource != "" {
 			// First try to resolve as a template name (contributed or system)
-			if resolvedDir, err := templates.GetTemplateDir(customTemplateSource); err == nil {
+			if resolvedDir, err := templates.GetTemplateDir(templateSource); err == nil {
 				templateDir = resolvedDir
-				fmt.Printf("Using template '%s' from: %s\n", customTemplateSource, templateDir)
+				fmt.Printf("Using template '%s' from: %s\n", templateSource, templateDir)
 			} else {
 				// Fall back to treating it as a full path
-				templateDir, err = filepath.Abs(customTemplateSource)
+				templateDir, err = filepath.Abs(templateSource)
 				if err != nil {
-					fmt.Printf("Failed to resolve TEMPLATE_SOURCE '%s' as template name or path: %v\n", customTemplateSource, err)
+					fmt.Printf("Failed to resolve template source '%s' as template name or path: %v\n", templateSource, err)
 					os.Exit(1)
 				}
 				// Verify the path exists

@@ -123,6 +123,7 @@ When you first run `create-local-app`, it will interactively prompt you for proj
 - `--force` - Force operation without confirmation (overwrite existing files)
 - `--create <template-name>` - Create a template from the current directory
 - `--remove <template-name>` - Remove a contributed template with confirmation
+- `--template <template-name>` - Use a specific template (saved for future runs)
 - `--version` - Show version information
 - `--help` - Show help message
 
@@ -168,6 +169,12 @@ create-local-app --auto --force
 ### Template Management
 
 Create and manage custom templates:
+
+**Using a Template:**
+```sh
+# Use a specific template by name
+create-local-app --template my-custom-template
+```
 
 **Creating a Template:**
 ```sh

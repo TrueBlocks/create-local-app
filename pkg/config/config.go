@@ -14,6 +14,7 @@ type Config struct {
 	ProjectName  string `json:"ProjectName"`
 	Github       string `json:"Github"`
 	Domain       string `json:"Domain"`
+	Template     string `json:"Template"`
 }
 
 // Args represents parsed command line arguments
@@ -24,6 +25,7 @@ type Args struct {
 	IsForce      bool
 	IsList       bool
 	TemplateName string
+	UseTemplate  string
 }
 
 // ParseArgs parses command line arguments and returns Args struct or handles special commands
@@ -72,8 +74,18 @@ func ParseArgs(version, buildTime string) (*Args, error) {
 			case "--list":
 				args.IsList = true
 				i++
+			case "--template":
+				if i+1 >= len(os.Args) {
+					return nil, fmt.Errorf("--template requires a template name parameter")
+				}
+				templateName := os.Args[i+1]
+				if !isValidTemplateName(templateName) {
+					return nil, fmt.Errorf("invalid template name '%s': must start with alphanumeric and contain only alphanumeric characters and dashes", templateName)
+				}
+				args.UseTemplate = templateName
+				i += 2 // Skip the template name argument
 			default:
-				return nil, fmt.Errorf("unknown argument: %s (valid options: --create <template-name>, --remove <template-name>, --auto, --force, --list, --version, --help)", os.Args[i])
+				return nil, fmt.Errorf("unknown argument: %s (valid options: --create <template-name>, --remove <template-name>, --template <template-name>, --auto, --force, --list, --version, --help)", os.Args[i])
 			}
 		}
 	}
@@ -94,6 +106,12 @@ func ParseArgs(version, buildTime string) (*Args, error) {
 	if args.IsCreate && args.IsRemove {
 		return nil, fmt.Errorf("--create and --remove flags are incompatible (cannot create and remove template simultaneously)")
 	}
+	if args.UseTemplate != "" && args.IsCreate {
+		return nil, fmt.Errorf("--template and --create flags are incompatible (cannot specify template when creating one)")
+	}
+	if args.UseTemplate != "" && args.IsRemove {
+		return nil, fmt.Errorf("--template and --remove flags are incompatible (cannot specify template when removing one)")
+	}
 
 	return args, nil
 }
@@ -107,9 +125,10 @@ func printHelp() {
 	fmt.Println()
 	fmt.Println("OPTIONS:")
 	fmt.Println("  --auto                           Use saved configuration without prompts")
+	fmt.Println("  --list                           List available templates")
 	fmt.Println("  --create <template-name>         Create a template from the current directory")
 	fmt.Println("  --remove <template-name>         Remove a contributed template")
-	fmt.Println("  --list                           List available templates")
+	fmt.Println("  --template <template-name>       Optionally, use a specific template")
 	fmt.Println("  --force                          Force operation without confirmation (overwrite existing files)")
 	fmt.Println("  --version                        Show version information")
 	fmt.Println("  --help                           Show this help message")
@@ -117,10 +136,11 @@ func printHelp() {
 	fmt.Println("EXAMPLES:")
 	fmt.Println("  create-local-app                           # Interactive mode - prompts for project details")
 	fmt.Println("  create-local-app --auto                    # Use previously saved configuration")
-	fmt.Println("  create-local-app --force                   # Interactive mode - overwrite existing files without confirmation")
+	fmt.Println("  create-local-app --list                    # List available templates")
 	fmt.Println("  create-local-app --create my-app           # Create template from current directory")
 	fmt.Println("  create-local-app --remove my-app           # Remove contributed template")
-	fmt.Println("  create-local-app --list                    # List available templates")
+	fmt.Println("  create-local-app --template my-template    # Use a specific template")
+	fmt.Println("  create-local-app --force                   # Overwrite existing files without confirmation")
 	fmt.Println()
 	fmt.Println("For more information, visit: https://github.com/TrueBlocks/create-local-app")
 }
