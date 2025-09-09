@@ -279,15 +279,26 @@ func main() {
 		templateDir = filepath.Join(configDir, "templates", "contributed", args.TemplateName)
 		fmt.Println("Creating template at:", templateDir)
 	} else {
-		customTemplateDir := os.Getenv("TEMPLATE_SOURCE")
-		if customTemplateDir != "" {
-			// Use custom template directory if specified
-			templateDir, err = filepath.Abs(customTemplateDir)
-			if err != nil {
-				fmt.Println("Failed to resolve custom template directory:", err)
-				os.Exit(1)
+		customTemplateSource := os.Getenv("TEMPLATE_SOURCE")
+		if customTemplateSource != "" {
+			// First try to resolve as a template name (contributed or system)
+			if resolvedDir, err := templates.GetTemplateDir(customTemplateSource); err == nil {
+				templateDir = resolvedDir
+				fmt.Printf("Using template '%s' from: %s\n", customTemplateSource, templateDir)
+			} else {
+				// Fall back to treating it as a full path
+				templateDir, err = filepath.Abs(customTemplateSource)
+				if err != nil {
+					fmt.Printf("Failed to resolve TEMPLATE_SOURCE '%s' as template name or path: %v\n", customTemplateSource, err)
+					os.Exit(1)
+				}
+				// Verify the path exists
+				if _, err := os.Stat(templateDir); os.IsNotExist(err) {
+					fmt.Printf("Template directory '%s' does not exist\n", templateDir)
+					os.Exit(1)
+				}
+				fmt.Printf("Using custom template directory: %s\n", templateDir)
 			}
-			fmt.Println("Using custom template directory:", templateDir)
 		} else {
 			// Use default system template
 			templateDir, err = templates.GetDefaultTemplateDir()
