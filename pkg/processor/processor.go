@@ -13,21 +13,24 @@ func IsExcluded(path string, info fs.FileInfo) (bool, error) {
 	baseName := filepath.Base(path)
 	folderName := filepath.Base(filepath.Dir(path))
 
-	if folderName == ".git" || folderName == "node_modules" || folderName == "dist" {
+	folderSkips := []string{".git", "node_modules", "dist"}
+	if slices.Contains(folderSkips, folderName) {
 		return true, filepath.SkipDir
 	}
 
-	if baseName == ".env" || baseName == ".DS_Store" || baseName == "shit" || baseName == ".create-local-app.json" {
+	fileSkips := []string{".DS_Store", "Thumbs.db", ".env", "shit", ".create-local-app.json"}
+	if slices.Contains(fileSkips, baseName) {
 		return true, nil
 	}
 
-	if strings.Contains(path, "/build") && baseName != "appicon.png" {
+	keeps := []string{"appicon.png", "Info.plist", "Info.dev.plist"}
+	if strings.Contains(path, "/build/") && !slices.Contains(keeps, baseName) {
 		return true, nil
 	}
 
 	if strings.Contains(path, "/ai") {
-		keep := []string{"README.md", "RulesOfEngagement.md", ".gitignore", "ToDoList.md"}
-		if slices.Contains(keep, baseName) {
+		keeps := []string{".gitignore", "README.md", "Invoker.md", "Rules.md"}
+		if slices.Contains(keeps, baseName) {
 			return false, nil
 		}
 		return baseName != "ai", nil
@@ -61,6 +64,10 @@ type TemplateVars struct {
 
 // ApplyTemplateVars applies template variable replacements to content
 func ApplyTemplateVars(content string, vars *TemplateVars) string {
+	content = strings.ReplaceAll(content, "{{SDK}}", "github.com/TrueBlocks/trueblocks-sdk/v5")
+	content = strings.ReplaceAll(content, "{{PACKAGES}}", "{{SAVEPKG}}")
+	content = strings.ReplaceAll(content, "{{DALLE}}", "github.com/TrueBlocks/trueblocks-dalle/v2")
+	content = strings.ReplaceAll(content, "{{APP}}", "github.com/TrueBlocks/"+vars.Slug+"/app")
 	content = strings.ReplaceAll(content, "{{PROJECT_NAME}}", vars.ProjectName)
 	content = strings.ReplaceAll(content, "{{PROJECT_PROPER}}", vars.ProjectProper)
 	content = strings.ReplaceAll(content, "{{PUBLISHER_NAME}}", vars.PublisherName)
@@ -72,11 +79,16 @@ func ApplyTemplateVars(content string, vars *TemplateVars) string {
 	content = strings.ReplaceAll(content, "{{GITHUB}}", vars.Github)
 	content = strings.ReplaceAll(content, "{{DOMAIN}}", vars.Domain)
 	content = strings.ReplaceAll(content, "{{CHIFRA}}", vars.Chifra)
+	content = strings.ReplaceAll(content, "{{SAVEPKG}}", "github.com/TrueBlocks/"+vars.Slug+"/pkg")
 	return content
 }
 
 // ReverseTemplateVars reverses template variable replacements (for create mode)
 func ReverseTemplateVars(content string, vars *TemplateVars) string {
+	content = strings.ReplaceAll(content, "github.com/TrueBlocks/trueblocks-sdk/v5", "{{SDK}}")
+	content = strings.ReplaceAll(content, "github.com/TrueBlocks/trueblocks-dalle/v2", "{{DALLE}}")
+	content = strings.ReplaceAll(content, "github.com/TrueBlocks/"+vars.Slug+"/pkg", "{{PACKAGES}}")
+	content = strings.ReplaceAll(content, "github.com/TrueBlocks/"+vars.Slug+"/app", "{{APP}}")
 	content = strings.ReplaceAll(content, vars.Chifra, "{{CHIFRA}}")
 	if vars.Domain != "" {
 		content = strings.ReplaceAll(content, vars.Domain, "{{DOMAIN}}")
