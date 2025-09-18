@@ -27,7 +27,13 @@ func IsExcluded(path string, info fs.FileInfo) (bool, error) {
 		}
 	}
 
-	fileSkips := []string{".DS_Store", "Thumbs.db", ".env", "shit", ".create-local-app.json"}
+	fileSkips := []string{
+		".create-local-app.json",
+		".DS_Store",
+		".env",
+		"shit",
+		"Thumbs.db",
+	}
 	if slices.Contains(fileSkips, baseName) {
 		return true, nil
 	}

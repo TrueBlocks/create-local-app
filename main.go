@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -507,12 +508,27 @@ func main() {
 	}
 
 	if !args.IsCreate && !args.IsRemove && !args.IsAuto {
+		fmt.Println("Running 'yarn install' in", projectDir)
+		cmd := exec.Command("yarn", "install")
+		cmd.Dir = projectDir
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			fmt.Printf("Warning: 'yarn install' failed: %v\n", err)
+		}
+		cmd = exec.Command("git", "checkout", "frontend/wailsjs/go/models.ts")
+		cmd.Dir = projectDir
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			fmt.Printf("Warning: 'git checkout' failed: %v\n", err)
+		}
+
 		os.Remove(filepath.Join(projectDir, ".wails-template.json"))
 		fmt.Println("✅ Project created at", projectDir)
 		fmt.Println()
-		fmt.Println("Next steps:")
-		fmt.Println("  cd frontend && yarn install && cd ..")
-		fmt.Println("  wails dev")
+		fmt.Println("✅ Next steps:")
+		fmt.Println("  yarn lint && yarn test && yarn start")
 	} else {
 		fmt.Println("✅ Template updated from project at", projectDir)
 	}
