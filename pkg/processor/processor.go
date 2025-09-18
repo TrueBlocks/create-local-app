@@ -18,6 +18,15 @@ func IsExcluded(path string, info fs.FileInfo) (bool, error) {
 		return true, filepath.SkipDir
 	}
 
+	// Also check if the current file/folder name should be skipped
+	if slices.Contains(folderSkips, baseName) {
+		if info.IsDir() {
+			return true, filepath.SkipDir
+		} else {
+			return true, nil
+		}
+	}
+
 	fileSkips := []string{".DS_Store", "Thumbs.db", ".env", "shit", ".create-local-app.json"}
 	if slices.Contains(fileSkips, baseName) {
 		return true, nil
@@ -85,6 +94,30 @@ func ApplyTemplateVars(content string, vars *TemplateVars) string {
 
 // ReverseTemplateVars reverses template variable replacements (for create mode)
 func ReverseTemplateVars(content string, vars *TemplateVars) string {
+	preserves := []struct {
+		old string
+		new string
+	}{
+		{"remoteExplorer", "{{rE}}"},
+		{"RemoteExplorer", "{{RE}}"},
+		{"localExplorer", "{{lE}}"},
+		{"LocalExplorer", "{{LE}}"},
+		{"Remote Explorer", "{{RSE}}"},
+		{"Local Explorer", "{{LSE}}"},
+		{"remote block explorer", "{{rbe}}"},
+		{"local block explorer", "{{lbe}}"},
+		{"Block explorer", "{{Be}}"},
+		{"Block Explorer", "{{BE}}"},
+		{"Explorers", "{{E}}"},
+		{"class Explorer", "{{cE}}"},
+		{"new Explorer", "{{nE}}"},
+		{"explorers: Explorer[];", "{{EE}}"},
+		{"this.explorers = this.convertValues(source[\"explorers\"], Explorer", "{{EE2}}"},
+	}
+	for _, pr := range preserves {
+		content = strings.ReplaceAll(content, pr.old, pr.new)
+	}
+
 	content = strings.ReplaceAll(content, "github.com/TrueBlocks/trueblocks-sdk/v5", "{{SDK}}")
 	content = strings.ReplaceAll(content, "github.com/TrueBlocks/trueblocks-dalle/v2", "{{DALLE}}")
 	content = strings.ReplaceAll(content, "github.com/TrueBlocks/"+vars.Slug+"/pkg", "{{PACKAGES}}")
@@ -110,5 +143,10 @@ func ReverseTemplateVars(content string, vars *TemplateVars) string {
 		content = strings.ReplaceAll(content, vars.ProjectName, "{{PROJECT_NAME}}")
 		content = strings.ReplaceAll(content, vars.ProjectProper, "{{PROJECT_PROPER}}")
 	}
+
+	for _, pr := range preserves {
+		content = strings.ReplaceAll(content, pr.new, pr.old)
+	}
+
 	return content
 }

@@ -101,8 +101,10 @@ func main() {
 			fmt.Println("Failed to read project directory:", err)
 			os.Exit(1)
 		}
-		// Remove ".git" if present (.git is okay since we don't replace it)
-		dirEntries = slices.DeleteFunc(dirEntries, func(e os.DirEntry) bool { return e.Name() == ".git" })
+
+		// If the only files present are default .github files, allow proceeding...
+		okayFile := []string{".git", ".gitignore", "README.md", "LICENSE"}
+		dirEntries = slices.DeleteFunc(dirEntries, func(e os.DirEntry) bool { return slices.Contains(okayFile, e.Name()) })
 		if len(dirEntries) > 0 && !args.IsAuto {
 			if !args.IsForce {
 				fmt.Println("The current directory (" + projectDir + ") contains files.")
