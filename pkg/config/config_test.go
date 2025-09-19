@@ -65,7 +65,7 @@ func TestParseArgs(t *testing.T) {
 			name:    "unknown argument",
 			args:    []string{"program", "--unknown"},
 			wantErr: true,
-			errMsg:  "unknown argument: --unknown (valid options: --create <template-name>, --auto, --force, --version, --help)",
+			errMsg:  "unknown argument: --unknown (valid options: --create <template-name>, --remove <template-name>, --template <template-name>, --auto, --force, --list, --version, --help)",
 		},
 		{
 			name:     "force mode",
@@ -183,7 +183,7 @@ func TestLoadConfig(t *testing.T) {
 			configPath := filepath.Join(tempDir, "test-config.json")
 
 			// Write test config file
-			if err := os.WriteFile(configPath, []byte(tt.configData), 0644); err != nil {
+			if err := os.WriteFile(configPath, []byte(tt.configData), 0o644); err != nil {
 				t.Fatalf("Failed to write test config: %v", err)
 			}
 
