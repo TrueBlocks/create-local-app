@@ -10,11 +10,12 @@ import (
 
 // Config represents the application configuration
 type Config struct {
-	Organization string `json:"Organization"`
-	ProjectName  string `json:"ProjectName"`
-	Github       string `json:"Github"`
-	Domain       string `json:"Domain"`
-	Template     string `json:"Template"`
+	Organization  string   `json:"Organization"`
+	ProjectName   string   `json:"ProjectName"`
+	Github        string   `json:"Github"`
+	Domain        string   `json:"Domain"`
+	Template      string   `json:"Template"`
+	PreserveFiles []string `json:"PreserveFiles,omitempty"`
 }
 
 // Args represents parsed command line arguments

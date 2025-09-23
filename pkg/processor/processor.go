@@ -5,6 +5,9 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+
+	"github.com/TrueBlocks/create-local-app/pkg/config"
+	"github.com/TrueBlocks/trueblocks-core/src/apps/chifra/pkg/file"
 )
 
 // IsExcluded determines if a file or directory should be excluded from processing
@@ -60,6 +63,27 @@ func IsExcluded(path string, info fs.FileInfo) (bool, error) {
 	}
 
 	return false, nil
+}
+
+// ShouldPreserve determines if an existing file should be preserved and not replaced
+func ShouldPreserve(filePath string, cfg *config.Config) bool {
+	if cfg == nil || len(cfg.PreserveFiles) == 0 {
+		return false
+	}
+
+	// Only preserve files that actually exist
+	if !file.FileExists(filePath) {
+		return false
+	}
+
+	normalizedPath := filepath.ToSlash(filePath)
+	for _, preserveFile := range cfg.PreserveFiles {
+		if strings.HasSuffix(normalizedPath, preserveFile) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // TemplateVars represents template replacement variables

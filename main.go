@@ -385,6 +385,13 @@ func main() {
 				return os.MkdirAll(targetPath, os.ModePerm)
 			}
 
+			if processor.ShouldPreserve(relPath, appConfig) {
+				if _, err := os.Stat(targetPath); err == nil {
+					fmt.Printf("Preserving existing file: %s\n", relPath)
+					return nil
+				}
+			}
+
 			input, err := os.ReadFile(path)
 			if err != nil {
 				return err
