@@ -104,7 +104,7 @@ func main() {
 		}
 
 		// If the only files present are default .github files, allow proceeding...
-		okayFile := []string{".git", ".gitignore", "README.md", "LICENSE"}
+		okayFile := []string{".git", ".gitignore", "README.md", "LICENSE", ".create-local-app.json"}
 		dirEntries = slices.DeleteFunc(dirEntries, func(e os.DirEntry) bool { return slices.Contains(okayFile, e.Name()) })
 		if len(dirEntries) > 0 && !args.IsAuto {
 			if !args.IsForce {
