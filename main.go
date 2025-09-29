@@ -242,6 +242,7 @@ func main() {
 
 	// Determine which template to use and resolve template name for saving in config
 	var resolvedTemplateName string
+
 	if !args.IsCreate {
 		// Check for --template flag first, then TEMPLATE_SOURCE environment variable, then saved config
 		if args.UseTemplate != "" {
@@ -258,16 +259,22 @@ func main() {
 			// Using default template
 			resolvedTemplateName = "default"
 		}
+	} else {
+		// In create mode, we're creating a template with the specified name
+		resolvedTemplateName = args.TemplateName
 	}
 
 	// Save config if we prompted for values or if template was explicitly specified
 	if shouldPrompt || resolvedTemplateName != "" {
+		// Preserve existing config values and only update what has changed
 		newConfig := &config.Config{
-			Organization: organization,
-			ProjectName:  projectName,
-			Github:       github,
-			Domain:       domain,
-			Template:     resolvedTemplateName,
+			Organization:  organization,
+			ProjectName:   projectName,
+			Github:        github,
+			Domain:        domain,
+			Template:      resolvedTemplateName,
+			PreserveFiles: appConfig.PreserveFiles, // Preserve existing PreserveFiles
+			ViewConfig:    appConfig.ViewConfig,    // Preserve existing ViewConfig
 		}
 
 		if args.IsCreate {

@@ -8,14 +8,22 @@ import (
 	"regexp"
 )
 
+// ViewConfigEntry represents configuration for a single view in .create-local-app.json
+type ViewConfigEntry struct {
+	MenuOrder      int             `json:"menuOrder,omitempty"`
+	Disabled       bool            `json:"disabled,omitempty"`
+	DisabledFacets map[string]bool `json:"disabledFacets,omitempty"`
+}
+
 // Config represents the application configuration
 type Config struct {
-	Organization  string   `json:"Organization"`
-	ProjectName   string   `json:"ProjectName"`
-	Github        string   `json:"Github"`
-	Domain        string   `json:"Domain"`
-	Template      string   `json:"Template"`
-	PreserveFiles []string `json:"PreserveFiles,omitempty"`
+	Organization  string                     `json:"Organization"`
+	ProjectName   string                     `json:"ProjectName"`
+	Github        string                     `json:"Github"`
+	Domain        string                     `json:"Domain"`
+	Template      string                     `json:"Template"`
+	PreserveFiles []string                   `json:"PreserveFiles,omitempty"`
+	ViewConfig    map[string]ViewConfigEntry `json:"ViewConfig,omitempty"`
 }
 
 // Args represents parsed command line arguments
