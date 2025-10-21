@@ -530,12 +530,12 @@ func main() {
 		if err := cmd.Run(); err != nil {
 			fmt.Printf("Warning: 'yarn install' failed: %v\n", err)
 		}
-		cmd = exec.Command("git", "checkout", "frontend/wailsjs/go/models.ts")
+		cmd = exec.Command("wails", "generate", "modules")
 		cmd.Dir = projectDir
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		if err := cmd.Run(); err != nil {
-			fmt.Printf("Warning: 'git checkout' failed: %v\n", err)
+			fmt.Printf("Warning: 'wails generate modules' failed: %v\n", err)
 		}
 
 		os.Remove(filepath.Join(projectDir, ".wails-template.json"))
