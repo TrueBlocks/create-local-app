@@ -121,17 +121,6 @@ func main() {
 			fmt.Println("Create template mode requires a valid Wails project directory.")
 			os.Exit(1)
 		}
-
-		// Check if we're in a dalledress or approvals project directory
-		if args.IsCreate {
-			projectDirName := filepath.Base(projectDir)
-			if strings.HasSuffix(projectDirName, "dalledress") || strings.HasSuffix(projectDirName, "approvals") {
-				fmt.Println("📝 Note: Template creation is not allowed in dalledress or approvals projects.")
-				fmt.Println("✨ Please use the built-in explorer miniDapp to manage templates for these applications.")
-				fmt.Println("💡 This restriction ensures proper integration with the specialized configuration systems.")
-				os.Exit(1)
-			}
-		}
 	}
 
 	appConfig, configPath, err := config.LoadProjectConfig()
