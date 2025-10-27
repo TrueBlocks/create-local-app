@@ -168,6 +168,7 @@ func ReverseTemplateVars(content string, vars *TemplateVars) string {
 		{"Store:         \"dalledress\"", "{{138}}"},
 		{"this.dalledress = this.convertValues(source[\"dalledress\"], model.DalleDress);", "{{139}}"},
 		{"dalledress: model.DalleDress[];", "{{140}}"},
+		{"dalledress:", "{{141}}"},
 	}
 	for _, pr := range preserves {
 		content = strings.ReplaceAll(content, pr.old, pr.new)
