@@ -14,6 +14,7 @@ import (
 	"github.com/TrueBlocks/create-local-app/pkg/config"
 	"github.com/TrueBlocks/create-local-app/pkg/processor"
 	"github.com/TrueBlocks/create-local-app/pkg/templates"
+	"github.com/TrueBlocks/trueblocks-core/src/apps/chifra/pkg/colors"
 	"github.com/TrueBlocks/trueblocks-core/src/apps/chifra/pkg/file"
 )
 
@@ -97,23 +98,8 @@ func main() {
 	}
 
 	if !args.IsCreate && !args.IsRemove {
-		dirEntries, err := os.ReadDir(projectDir)
-		if err != nil {
-			fmt.Println("Failed to read project directory:", err)
-			os.Exit(1)
-		}
+		checkLocalFolder(projectDir, args) // may not return
 
-		// If the only files present are default .github files, allow proceeding...
-		okayFile := []string{".git", ".gitignore", "README.md", "LICENSE", ".create-local-app.json"}
-		dirEntries = slices.DeleteFunc(dirEntries, func(e os.DirEntry) bool { return slices.Contains(okayFile, e.Name()) })
-		if len(dirEntries) > 0 && !args.IsAuto {
-			if !args.IsForce {
-				fmt.Println("The current directory (" + projectDir + ") contains files.")
-				fmt.Println("Proceeding will overwrite existing files in an unrecoverable way.")
-				fmt.Println("Use --force flag to proceed without this check.")
-				os.Exit(1)
-			}
-		}
 	} else {
 		wailsJsonPath := filepath.Join(projectDir, "wails.json")
 		if _, err := os.Stat(wailsJsonPath); os.IsNotExist(err) {
@@ -540,10 +526,55 @@ func main() {
 
 		os.Remove(filepath.Join(projectDir, ".wails-template.json"))
 		fmt.Println("✅ Project created at", projectDir)
+		fmt.Println("✅ Next steps ==> Run:")
 		fmt.Println()
-		fmt.Println("✅ Next steps:")
-		fmt.Println("  yarn lint && yarn test && yarn start")
+		fmt.Println(colors.BrightBlue, "  yarn lint && yarn test && yarn start", colors.Off)
+		fmt.Println()
 	} else {
 		fmt.Println("✅ Template updated from project at", projectDir)
+	}
+}
+
+func checkLocalFolder(projectDir string, args *config.Args) {
+	dirEntries, err := os.ReadDir(projectDir)
+	if err != nil {
+		fmt.Println("Failed to read project directory:", err)
+		os.Exit(1)
+	}
+
+	checkFunc := func(e os.DirEntry) bool {
+		if e.IsDir() && e.Name() == "frontend" {
+			checkLocalFolder(filepath.Join(projectDir, "frontend"), args) // may not return
+			return true
+		}
+
+		// If only these files are present, allow processing...
+		okayFiles := []string{
+			".git",
+			".gitignore",
+			"README.md",
+			"LICENSE",
+			".create-local-app.json",
+			".env",
+			"go.mod",
+		}
+		for _, okFile := range okayFiles {
+			if e.Name() == okFile {
+				// logger.InfoBB("File", e.Name(), "found. Okay")
+				return true
+			}
+		}
+		// logger.InfoBB("File", e.Name(), "found. Not okay")
+		return false
+	}
+
+	dirEntries = slices.DeleteFunc(dirEntries, checkFunc)
+	if len(dirEntries) > 0 && !args.IsAuto {
+		if !args.IsForce {
+			fmt.Println("The current directory (" + projectDir + ") contains files.")
+			fmt.Println("Proceeding will overwrite existing files in an unrecoverable way.")
+			fmt.Println("Use --force flag to proceed without this check.")
+			os.Exit(1)
+		}
 	}
 }

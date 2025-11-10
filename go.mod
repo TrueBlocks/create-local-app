@@ -3,7 +3,7 @@ module github.com/TrueBlocks/create-local-app
 // GoLang Version
 go 1.25.1
 
-require github.com/TrueBlocks/trueblocks-core/src/apps/chifra v0.0.0-20250928042956-de9ea31404b7
+require github.com/TrueBlocks/trueblocks-core/src/apps/chifra v0.0.0-20251101132058-18b760a900a0
 
 require (
 	github.com/bykof/gostradamus v1.1.2 // indirect
