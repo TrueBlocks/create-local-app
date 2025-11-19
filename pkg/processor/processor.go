@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/TrueBlocks/create-local-app/pkg/config"
-	"github.com/TrueBlocks/trueblocks-core/src/apps/chifra/pkg/file"
+	"github.com/TrueBlocks/trueblocks-chifra/v6/pkg/file"
 )
 
 // IsExcluded determines if a file or directory should be excluded from processing

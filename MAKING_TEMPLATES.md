@@ -92,7 +92,7 @@ The following variables are available for substitution:
 | `{{GITHUB}}` | GitHub import path | `github.com/TrueBlocks/my-app` |
 | `{{DOMAIN}}` | Domain name | `trueblocks.io` |
 | `{{SLUG}}` | URL-friendly identifier | `trueblocks-my-app` |
-| `{{CHIFRA}}` | TrueBlocks chifra import path | `github.com/TrueBlocks/trueblocks-core/src/apps/chifra` |
+| `{{CHIFRA}}` | TrueBlocks chifra import path | `github.com/TrueBlocks/trueblocks-chifra/v6` |
 
 ## Managing Templates
 

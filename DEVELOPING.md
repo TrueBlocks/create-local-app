@@ -100,7 +100,7 @@ The following variables are automatically replaced during project generation:
 | `{{SLUG}}` | URL-friendly project identifier | `trueblocks-my-awesome-app` |
 | `{{GITHUB}}` | Go import path | `github.com/TrueBlocks/my-awesome-app` |
 | `{{DOMAIN}}` | Domain name | `trueblocks.io` |
-| `{{CHIFRA}}` | TrueBlocks Chifra path | `github.com/TrueBlocks/trueblocks-core/src/apps/chifra` |
+| `{{CHIFRA}}` | TrueBlocks Chifra path | `github.com/TrueBlocks/trueblocks-chifra/v6` |
 | `{{PUBLISHER_NAME}}` | Publisher name | `YourCompany` |
 | `{{PUBLISHER_EMAIL}}` | Publisher email | `your_email@your_company.com` |
 

@@ -14,8 +14,8 @@ import (
 	"github.com/TrueBlocks/create-local-app/pkg/config"
 	"github.com/TrueBlocks/create-local-app/pkg/processor"
 	"github.com/TrueBlocks/create-local-app/pkg/templates"
-	"github.com/TrueBlocks/trueblocks-core/src/apps/chifra/pkg/colors"
-	"github.com/TrueBlocks/trueblocks-core/src/apps/chifra/pkg/file"
+	"github.com/TrueBlocks/trueblocks-chifra/v6/pkg/colors"
+	"github.com/TrueBlocks/trueblocks-chifra/v6/pkg/file"
 )
 
 //go:embed templates/system/*.tar.gz
@@ -152,7 +152,7 @@ func main() {
 	projectName := appConfig.ProjectName
 	github := appConfig.Github
 	domain := appConfig.Domain
-	chifra := "github.com/TrueBlocks/trueblocks-core/src/apps/chifra"
+	chifra := "github.com/TrueBlocks/trueblocks-chifra/v6"
 
 	// Interactive prompting for missing values (regular mode or --create mode or developer mode)
 	// For --create mode, always prompt to allow project-specific configuration
