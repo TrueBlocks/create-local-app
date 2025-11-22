@@ -33,6 +33,7 @@ type Args struct {
 	IsRemove     bool
 	IsForce      bool
 	IsList       bool
+	IsCustomize  bool
 	TemplateName string
 	UseTemplate  string
 }
@@ -83,6 +84,9 @@ func ParseArgs(version, buildTime string) (*Args, error) {
 			case "--list":
 				args.IsList = true
 				i++
+			case "--customize":
+				args.IsCustomize = true
+				i++
 			case "--template":
 				if i+1 >= len(os.Args) {
 					return nil, fmt.Errorf("--template requires a template name parameter")
@@ -94,7 +98,7 @@ func ParseArgs(version, buildTime string) (*Args, error) {
 				args.UseTemplate = templateName
 				i += 2 // Skip the template name argument
 			default:
-				return nil, fmt.Errorf("unknown argument: %s (valid options: --create <template-name>, --remove <template-name>, --template <template-name>, --auto, --force, --list, --version, --help)", os.Args[i])
+				return nil, fmt.Errorf("unknown argument: %s (valid options: --create <template-name>, --remove <template-name>, --template <template-name>, --auto, --force, --list, --customize, --version, --help)", os.Args[i])
 			}
 		}
 	}
@@ -121,6 +125,15 @@ func ParseArgs(version, buildTime string) (*Args, error) {
 	if args.UseTemplate != "" && args.IsRemove {
 		return nil, fmt.Errorf("--template and --remove flags are incompatible (cannot specify template when removing one)")
 	}
+	if args.IsCustomize && args.IsCreate {
+		return nil, fmt.Errorf("--customize and --create flags are incompatible (customize mode is for existing projects)")
+	}
+	if args.IsCustomize && args.IsRemove {
+		return nil, fmt.Errorf("--customize and --remove flags are incompatible (customize mode is for existing projects)")
+	}
+	if args.IsCustomize && args.IsList {
+		return nil, fmt.Errorf("--customize and --list flags are incompatible")
+	}
 
 	return args, nil
 }
@@ -138,6 +151,7 @@ func printHelp() {
 	fmt.Println("  --create <template-name>         Create a template from the current directory")
 	fmt.Println("  --remove <template-name>         Remove a contributed template")
 	fmt.Println("  --template <template-name>       Optionally, use a specific template")
+	fmt.Println("  --customize                      Interactively customize enabled/disabled views")
 	fmt.Println("  --force                          Force operation without confirmation (overwrite existing files)")
 	fmt.Println("  --version                        Show version information")
 	fmt.Println("  --help                           Show this help message")
@@ -149,6 +163,7 @@ func printHelp() {
 	fmt.Println("  create-local-app --create my-template      # Create template from current directory")
 	fmt.Println("  create-local-app --remove my-template      # Remove contributed template")
 	fmt.Println("  create-local-app --template my-template    # Use a specific template")
+	fmt.Println("  create-local-app --customize               # Customize enabled/disabled views interactively")
 	fmt.Println("  create-local-app --force                   # Overwrite existing files without confirmation")
 	fmt.Println()
 	fmt.Println("For more information, visit: https://github.com/TrueBlocks/create-local-app")

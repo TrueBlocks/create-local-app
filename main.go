@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/TrueBlocks/create-local-app/pkg/config"
+	"github.com/TrueBlocks/create-local-app/pkg/customize"
 	"github.com/TrueBlocks/create-local-app/pkg/processor"
 	"github.com/TrueBlocks/create-local-app/pkg/templates"
 	"github.com/TrueBlocks/trueblocks-chifra/v6/pkg/colors"
@@ -56,38 +57,19 @@ func main() {
 
 	// Handle remove template mode
 	if args.IsRemove {
-		configDir, err := config.GetUserConfigDir()
-		if err != nil {
-			fmt.Printf("Error getting user config directory: %v\n", err)
+		if err := templates.HandleRemoveTemplate(args.TemplateName); err != nil {
+			fmt.Printf("Error: %v\n", err)
 			os.Exit(1)
 		}
+		return
+	}
 
-		templatePath := filepath.Join(configDir, "templates", "contributed", args.TemplateName)
-
-		// Check if template exists
-		if _, err := os.Stat(templatePath); os.IsNotExist(err) {
-			fmt.Printf("Error: Template '%s' not found in contributed templates.\n", args.TemplateName)
+	// Handle customize mode
+	if args.IsCustomize {
+		if err := customize.RunCustomize(); err != nil {
+			fmt.Printf("Error during customize: %v\n", err)
 			os.Exit(1)
 		}
-
-		// Ask for confirmation
-		fmt.Printf("Are you sure you want to remove template '%s'? This action cannot be undone. (y/N): ", args.TemplateName)
-		reader := bufio.NewReader(os.Stdin)
-		response, _ := reader.ReadString('\n')
-		response = strings.TrimSpace(strings.ToLower(response))
-
-		if response != "y" && response != "yes" {
-			fmt.Println("Template removal cancelled.")
-			os.Exit(0)
-		}
-
-		// Remove the template directory
-		if err := os.RemoveAll(templatePath); err != nil {
-			fmt.Printf("Error removing template: %v\n", err)
-			os.Exit(1)
-		}
-
-		fmt.Printf("✅ Template '%s' successfully removed from contributed templates.\n", args.TemplateName)
 		return
 	}
 

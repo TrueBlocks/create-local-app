@@ -252,3 +252,38 @@ func listTemplatesInDir(dir string) ([]string, error) {
 
 	return templates, nil
 }
+
+// HandleRemoveTemplate removes a contributed template with user confirmation
+func HandleRemoveTemplate(templateName string) error {
+	configDir, err := config.GetUserConfigDir()
+	if err != nil {
+		return fmt.Errorf("error getting user config directory: %w", err)
+	}
+
+	templatePath := filepath.Join(configDir, "templates", "contributed", templateName)
+
+	// Check if template exists
+	if _, err := os.Stat(templatePath); os.IsNotExist(err) {
+		return fmt.Errorf("template '%s' not found in contributed templates", templateName)
+	}
+
+	// Ask for confirmation
+	fmt.Printf("Are you sure you want to remove template '%s'? This action cannot be undone. (y/N): ", templateName)
+
+	var response string
+	fmt.Scanln(&response)
+	response = strings.ToLower(strings.TrimSpace(response))
+
+	if response != "y" && response != "yes" {
+		fmt.Println("Template removal cancelled.")
+		return nil
+	}
+
+	// Remove the template directory
+	if err := os.RemoveAll(templatePath); err != nil {
+		return fmt.Errorf("error removing template: %w", err)
+	}
+
+	fmt.Printf("✅ Template '%s' successfully removed from contributed templates.\n", templateName)
+	return nil
+}
