@@ -5,7 +5,8 @@ go 1.25.1
 
 require (
 	github.com/TrueBlocks/goMaker v0.0.0-00010101000000-000000000000
-	github.com/TrueBlocks/trueblocks-chifra/v6 v6.5.1-0.20251122032052-f2d3b255c1cc
+	github.com/TrueBlocks/trueblocks-chifra/v6 v6.6.5
+	github.com/chzyer/readline v1.5.1
 )
 
 replace github.com/TrueBlocks/goMaker => ../goMaker
@@ -15,7 +16,6 @@ require (
 	github.com/benbjohnson/clock v1.3.5 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/bykof/gostradamus v1.1.2 // indirect
-	github.com/chzyer/readline v1.5.1 // indirect
 	github.com/crackcomm/go-gitignore v0.0.0-20241020182519-7843d2ba8fdf // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
