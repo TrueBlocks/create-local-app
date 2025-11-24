@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/TrueBlocks/create-local-app/pkg/config"
-	"github.com/TrueBlocks/goMaker/types"
+	"github.com/TrueBlocks/goMaker/v6/types"
 	"github.com/TrueBlocks/trueblocks-chifra/v6/pkg/colors"
 )
 
