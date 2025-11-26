@@ -530,6 +530,11 @@ func checkLocalFolder(projectDir string, args *config.Args) {
 			return true
 		}
 
+		if e.IsDir() && e.Name() == "build" {
+			checkLocalFolder(filepath.Join(projectDir, "build"), args) // may not return
+			return true
+		}
+
 		// If only these files are present, allow processing...
 		okayFiles := []string{
 			".git",
@@ -539,6 +544,7 @@ func checkLocalFolder(projectDir string, args *config.Args) {
 			".create-local-app.json",
 			".env",
 			"go.mod",
+			"appicon.png",
 		}
 		for _, okFile := range okayFiles {
 			if e.Name() == okFile {

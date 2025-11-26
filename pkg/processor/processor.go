@@ -41,7 +41,7 @@ func IsExcluded(path string, info fs.FileInfo) (bool, error) {
 		return true, nil
 	}
 
-	keeps := []string{"appicon.png", "Info.plist", "Info.dev.plist"}
+	keeps := []string{"Info.plist", "Info.dev.plist"}
 	if strings.Contains(path, "/build/") && !slices.Contains(keeps, baseName) {
 		return true, nil
 	}
