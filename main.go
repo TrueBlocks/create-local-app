@@ -556,6 +556,9 @@ func checkLocalFolder(projectDir string, args *config.Args) {
 			fmt.Println("The current directory (" + projectDir + ") contains files.")
 			fmt.Println("Proceeding will overwrite existing files in an unrecoverable way.")
 			fmt.Println("Use --force flag to proceed without this check.")
+			for _, file := range dirEntries {
+				fmt.Println("    ", file)
+			}
 			os.Exit(1)
 		}
 	}
