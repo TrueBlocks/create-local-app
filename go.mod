@@ -5,7 +5,7 @@ go 1.25.1
 
 require (
 	github.com/TrueBlocks/goMaker/v6 v6.6.5
-	github.com/TrueBlocks/trueblocks-chifra/v6 v6.6.5
+	github.com/TrueBlocks/trueblocks-chifra/v6 v6.6.6-0.20251128135334-578550555e18
 	github.com/chzyer/readline v1.5.1
 )
 
